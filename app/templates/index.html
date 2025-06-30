@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Feedback App</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>Submit Feedback</h1>
+  <form method="POST" action="/submit">
+    <input type="text" name="name" placeholder="Your name" required><br>
+    <input type="text" name="question" placeholder="Your question" required><br>
+    <textarea name="description" placeholder="More details..."></textarea><br>
+    <button type="submit">Submit</button>
+  </form>
+
+  <h2>Feedback List</h2>
+  <ul>
+    {% for fb in feedbacks %}
+      <li>
+        <strong>{{ fb['name'] }}</strong> asked: <em>{{ fb['question'] }}</em><br>
+        {{ fb['description'] }}<br>
+        Votes: {{ fb['votes'] }}
+        <a href="/vote/{{ fb['id'] }}/up">Upvote</a>
+        <a href="/vote/{{ fb['id'] }}/down">Downvote</a>
+      </li>
+    {% endfor %}
+  </ul>
+</body>
+</html>
