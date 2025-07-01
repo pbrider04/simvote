@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import sqlite3
 import os
 import json
 from datetime import datetime
+import io
+import csv
 
 app = FastAPI()
 
@@ -16,8 +18,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # Mount static files correctly, giving it a 'name'
-# Adjust path if 'static' folder is not directly in the same directory as main.py
-# Assuming static is sibling to main.py, e.g., /app/static
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 # Database configuration
@@ -42,7 +42,7 @@ def init_db():
             name TEXT NOT NULL,
             votes INTEGER DEFAULT 0,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            upvoter_data TEXT DEFAULT '[]' -- New column to store JSON string of upvoter IDs and names
+            upvoter_data TEXT DEFAULT '[]'
         )
     ''')
     
@@ -162,6 +162,81 @@ async def vote_feedback(
     
     conn.close()
     return RedirectResponse(url="/", status_code=303)
+
+@app.get("/table", response_class=HTMLResponse)
+async def show_table(request: Request):
+    conn = get_db_connection()
+    feedbacks_raw = conn.execute('SELECT * FROM feedback ORDER BY timestamp DESC').fetchall()
+    conn.close()
+
+    # Prepare data for display in the table, including processing upvoter_data
+    feedbacks_for_table = []
+    for fb_row in feedbacks_raw:
+        fb = dict(fb_row)
+        try:
+            upvoter_list = json.loads(fb['upvoter_data'])
+            # Display upvoter IDs as a comma-separated string for the table
+            fb['upvoter_ids_display'] = ", ".join([voter['id'] for voter in upvoter_list if 'id' in voter])
+            fb['upvoter_names_display'] = ", ".join([voter['name'] for voter in upvoter_list if 'name' in voter])
+        except json.JSONDecodeError:
+            fb['upvoter_ids_display'] = ""
+            fb['upvoter_names_display'] = ""
+        feedbacks_for_table.append(fb)
+
+    return templates.TemplateResponse(
+        "table.html",
+        {"request": request, "feedbacks": feedbacks_for_table, "url_for": request.url_for, "config": config}
+    )
+
+@app.get("/export-csv")
+async def export_csv():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, question, description, name, votes, timestamp, upvoter_data FROM feedback ORDER BY timestamp DESC')
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Get column names (excluding row_factory's automatic index, use actual column names)
+    column_names = [description[0] for description in cursor.description]
+
+    # Handle upvoter_data for CSV export (flatten it or make it readable)
+    processed_rows = []
+    for row in rows:
+        row_dict = dict(row) # Convert Row to dict
+        try:
+            upvoter_list = json.loads(row_dict['upvoter_data'])
+            upvoter_ids = "; ".join([voter['id'] for voter in upvoter_list if 'id' in voter])
+            upvoter_names = "; ".join([voter['name'] for voter in upvoter_list if 'name' in voter])
+            row_dict['upvoter_data_ids'] = upvoter_ids
+            row_dict['upvoter_data_names'] = upvoter_names
+        except json.JSONDecodeError:
+            row_dict['upvoter_data_ids'] = ""
+            row_dict['upvoter_data_names'] = ""
+        
+        # Select and reorder columns for CSV
+        processed_rows.append([
+            row_dict['id'],
+            row_dict['question'],
+            row_dict['description'],
+            row_dict['name'],
+            row_dict['votes'],
+            row_dict['timestamp'],
+            row_dict['upvoter_data_ids'], # New column
+            row_dict['upvoter_data_names'] # New column
+        ])
+    
+    # Update headers for CSV
+    csv_headers = ['ID', 'Frage', 'Beschreibung', 'Name', 'Votes', 'Zeitstempel', 'Upvoter IDs', 'Upvoter Namen']
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(csv_headers)
+    writer.writerows(processed_rows)
+
+    response = Response(content=output.getvalue(), media_type="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=feedback_export.csv"
+    return response
+
 
 # To run with uvicorn: uvicorn main:app --reload
 if __name__ == '__main__':

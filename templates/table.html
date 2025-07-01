@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ config.app_title }} - Tabelle</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="{{ config.logo_path }}" alt="App Logo" class="header-logo">
+      <h2>{{ config.app_title }}</h2>
+      <p>{{ config.app_description }}</p>
+    </header>
+
+    <div class="main-layout">
+        <nav class="sidebar">
+            <ul>
+                <li><a href="/" id="show-existing">Zurück zur Startseite</a></li>
+                <li><a href="#" id="show-table-nav">Feedback-Tabelle</a></li>
+            </ul>
+        </nav>
+        
+        <div class="content-area">
+            <section id="feedback-table-section" class="content-section active">
+                <h2>Feedback-Daten</h2>
+                <div class="table-actions">
+                    <a href="{{ url_for('export_csv') }}" class="export-button">Tabelle als CSV exportieren</a>
+                </div>
+                <div class="table-container">
+                    <table class="feedback-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Frage</th>
+                                <th>Beschreibung</th>
+                                <th>Name</th>
+                                <th>Votes</th>
+                                <th>Zeitstempel</th>
+                                <th>Upvoter IDs</th>
+                                <th>Upvoter Namen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fb in feedbacks %}
+                                <tr>
+                                    <td>{{ fb['id'] }}</td>
+                                    <td>{{ fb['question'] }}</td>
+                                    <td>{{ fb['description'] }}</td>
+                                    <td>{{ fb['name'] }}</td>
+                                    <td>{{ fb['votes'] }}</td>
+                                    <td>{{ fb['timestamp'] }}</td>
+                                    <td>{{ fb['upvoter_ids_display'] }}</td>
+                                    <td>{{ fb['upvoter_names_display'] }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if not feedbacks %}
+                    <p class="no-feedback">Keine Daten in der Tabelle verfügbar.</p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+  </div>
+
+  <script>
+    // Simple navigation for this page
+    document.addEventListener('DOMContentLoaded', () => {
+        const tableNavLink = document.getElementById('show-table-nav');
+        if (tableNavLink) {
+            tableNavLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                // This page is already the table page, maybe scroll to top or just do nothing
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    });
+  </script>
+</body>
+</html>
