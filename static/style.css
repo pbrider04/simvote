@@ -23,19 +23,33 @@ body {
 }
 
 header {
-  text-align: center;
+  display: flex;
+  align-items: center; /* Vertikal zentrieren */
+  justify-content: center; /* Horizontal zentrieren */
+  flex-wrap: wrap; /* Erlaubt das Umbrechen auf kleineren Bildschirmen */
   margin-bottom: 40px;
   padding-bottom: 20px;
   border-bottom: 1px solid #c0d6c0; /* Gedämpftes Hellgrün für Trennlinie */
 }
 
-header h1 {
+.header-logo {
+    max-width: 80px; /* Anpassen der Größe nach Bedarf */
+    height: auto;
+    margin-right: 15px; /* Abstand zwischen Logo und Text */
+    margin-bottom: 0; /* Kein Bodenabstand für vertikale Ausrichtung */
+}
+
+header h2 {
   color: #2f612f; /* Dunkleres Grün */
-  margin-bottom: 5px;
+  margin: 0; /* Entfernt Standardabstände, um besser mit Flexbox ausgerichtet zu sein */
   font-size: 2.5em;
 }
 
 header p {
+  width: 100%; /* Erzwingt die Beschreibung in eine neue Zeile */
+  text-align: center;
+  margin-top: 10px; /* Abstand über der Beschreibung */
+  margin-bottom: 0;
   color: #4a7a4a; /* Mittleres Grün */
   font-size: 1.1em;
 }
@@ -57,20 +71,24 @@ header p {
 .sidebar ul {
   list-style: none;
   padding: 0;
+  display: flex; /* Horizontal anordnen */
+  justify-content: space-around; /* Elemente gleichmäßig verteilen */
+  flex-wrap: wrap; /* Bei Bedarf umbrechen */
 }
 
 .sidebar li {
-  margin-bottom: 10px;
+  margin: 5px; /* Abstand zwischen Buttons */
 }
 
 .sidebar a {
-  display: block;
+  display: inline-block; /* Erlaubt natürliche Breite basierend auf Inhalt */
   padding: 10px 15px;
   background-color: #d0e0d0; /* Helles Grün */
   color: #2f612f; /* Dunkleres Grün */
   text-decoration: none;
   border-radius: 5px;
   transition: background-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap; /* Text auf einer Zeile halten */
 }
 
 .sidebar a:hover {
@@ -124,6 +142,39 @@ h2 {
   cursor: not-allowed;
 }
 
+#edit-name-icon {
+    font-size: 1.2em;
+    vertical-align: middle;
+    margin-left: 5px;
+    color: #778877; /* Subtle color */
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+#edit-name-icon:hover {
+    color: #4a7a4a; /* Slightly more visible on hover */
+}
+
+#upvoter-id-display {
+    color: #778877; /* Grau für ausgeblendete Darstellung */
+    font-size: 0.85em;
+    margin-left: 10px;
+    white-space: nowrap; /* ID auf einer Zeile halten */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px; /* Begrenzt die Breite, falls ID sehr lang ist */
+    padding-top: 2px; /* Slight vertical alignment adjustment */
+}
+#toggle-upvoter-id-display-icon {
+    cursor: pointer;
+    color: #4a7a4a; /* Subtile Farbe */
+    font-size: 1.1em;
+    margin-left: 5px;
+}
+#toggle-upvoter-id-display-icon:hover {
+    color: #2f612f;
+}
+
+
 #feedback-form input[type="text"]:focus,
 #feedback-form textarea:focus {
   border-color: #2f612f; /* Dunkleres Grün */
@@ -171,19 +222,21 @@ h2 {
 
 .feedback-votes {
   display: flex;
-  flex-direction: column; /* Für Desktop/Tablet bleibt es column */
+  flex-direction: column; /* Wieder über und unter der Zahl */
   align-items: center;
   margin-right: 20px;
   padding-right: 15px;
   border-right: 1px solid #c0d6c0; /* Gedämpftes Hellgrün */
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 .vote-button {
-  display: block;
+  display: block; /* Sichert, dass sie untereinander liegen */
   font-size: 1.5em;
   color: #4a7a4a; /* Mittleres Grün */
   text-decoration: none;
-  padding: 5px;
+  padding: 5px 8px; /* Abstand anpassen */
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
@@ -201,7 +254,7 @@ h2 {
   font-size: 1.4em;
   font-weight: bold;
   color: #2f612f; /* Dunkleres Grün */
-  margin: 5px 0;
+  margin: 5px 0; /* Oben/Unten-Abstand für vertikale Anordnung */
 }
 
 .feedback-content {
@@ -209,48 +262,25 @@ h2 {
   min-width: 0; /* Verhindert, dass Flex-Items überlaufen */
 }
 
-/* STYLES FÜR FRAGE */
+/* STYLES FÜR FRAGE (VEREINFACHT: KEINE TOGGLES) */
 .question-wrapper {
     position: relative;
     margin-bottom: 8px;
-    padding-left: 20px; /* Platz für den Pfeil links */
+    padding-left: 0; /* Kein Padding mehr, da kein Pfeil */
     line-height: 1.2em;
-    width: 100%; /* Sicherstellen, dass es die verfügbare Breite nutzt */
+    width: 100%;
 }
 
-.feedback-question-short {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.feedback-question { /* Nur noch eine Klasse für Fragen */
+    white-space: normal; /* Erlaubt normalen Zeilenumbruch */
+    overflow-wrap: break-word; /* Stellt sicher, dass lange Wörter umbrechen */
+    word-wrap: break-word; /* Fallback für IE */
     margin-top: 0;
     margin-bottom: 0;
     font-size: 1.4em;
-    color: #2f612f; /* Dunkleres Grün */
+    color: #2f612f;
     padding-bottom: 0;
-    max-width: 100%; /* Wichtig für ellipsis und um Überlauf zu verhindern */
-}
-
-.feedback-question-full {
-    display: none;
-    white-space: pre-wrap;
-    margin-top: 0;
-    margin-bottom: 0;
-    font-size: 1.4em;
-    color: #2f612f; /* Dunkleres Grün */
-    padding-bottom: 0;
-    max-width: 100%; /* Wichtig für Textumbrüche */
-}
-
-.question-toggle-arrow {
-    position: absolute;
-    left: 0; /* Positionierung links */
-    top: 0;
-    cursor: pointer;
-    color: #4a7a4a; /* Mittleres Grün */
-    font-weight: bold;
-    font-size: 1.1em;
-    padding-right: 5px; /* Abstand zum Text */
-    background-color: #fffefd;
+    max-width: 100%;
 }
 
 /* STYLES FÜR BESCHREIBUNG */
@@ -258,28 +288,27 @@ h2 {
     position: relative;
     margin-bottom: 10px;
     padding-left: 20px; /* Platz für den Pfeil links */
-    width: 100%; /* Sicherstellen, dass es die verfügbare Breite nutzt */
+    width: 100%;
+    overflow: hidden; /* Sicherstellen, dass Überlauf im Wrapper selbst gekappt wird */
 }
 
 .feedback-description-short {
     white-space: nowrap; /* Text nicht umbrechen und auf einer Zeile halten */
     overflow: hidden; /* Überlaufenden Text verstecken */
     text-overflow: ellipsis; /* Pünktchen anzeigen */
-    /* Die folgenden Eigenschaften wurden entfernt, um den Text auf eine Zeile zu beschränken:
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical; */
     margin-bottom: 0;
     padding-bottom: 0;
     line-height: 1.4em;
-    max-width: 100%; /* Wichtig für Textumbrüche und Ellipsis */
+    /* Adjust max-width to account for the padding of the parent wrapper */
+    max-width: calc(100% - 20px); /* 20px ist der padding-left von description-wrapper */
 }
 
 .feedback-description-full {
-    display: none;
+    display: none; /* Initial ausgeblendet */
     margin-bottom: 0;
     padding-bottom: 0;
-    white-space: pre-wrap;
+    white-space: pre-wrap; /* Behält Zeilenumbrüche bei und ermöglicht Umbruch bei langen Wörtern */
+    word-wrap: break-word; /* Fallback für IE */
     max-width: 100%; /* Wichtig für Textumbrüche */
 }
 
@@ -300,7 +329,7 @@ h2 {
   color: #778877; /* Grau-Grün */
 }
 
-.upvoters-list {
+.all-upvoters-list { /* New class for upvoters list */
     font-size: 0.9em;
     color: #556655; /* Etwas dunkleres Grau-Grün */
     margin-top: 5px;
@@ -336,4 +365,149 @@ h2 {
 }
 
 .explanation-text strong {
-  color: #4a7a4a; /* Mittleres Grün
+  color: #4a7a4a; /* Mittleres Grün */
+}
+
+/* --- Media Queries for Responsive Design --- */
+
+/* Für Bildschirme größer als 768px (Desktop/größere Tablets) */
+@media (min-width: 769px) {
+  .main-layout {
+    flex-direction: row; /* Sidebar und Content nebeneinander */
+  }
+
+  .sidebar {
+    /* Standardwerte (flex: 0 0 200px; padding-right: 20px; etc.) gelten hier */
+  }
+
+  /* Vote-Buttons bleiben in Spaltenanordnung auf Desktop */
+  .feedback-votes {
+    flex-direction: column;
+    border-bottom: none; /* Keine untere Linie, nur rechte */
+  }
+}
+
+/* Für Bildschirme mit einer maximalen Breite von 768px (Tablets und kleinere Geräte) */
+@media (max-width: 768px) {
+  .container {
+    margin: 20px; /* Kleinere Ränder */
+    padding: 15px; /* Kleineres Innenpolster */
+  }
+
+  header h2 {
+    font-size: 2em; /* Etwas kleinere Schrift */
+  }
+
+  h2 {
+    font-size: 1.5em; /* Etwas kleinere Schrift */
+  }
+
+  .main-layout {
+    flex-direction: column; /* Sidebar und Content untereinander stapeln */
+  }
+
+  .sidebar {
+    flex: none; /* Keine feste Breitenbasis */
+    width: 100%; /* Volle Breite */
+    padding-right: 0; /* Rechter Abstand entfernen */
+    border-right: none; /* Rechter Rahmen entfernen */
+    margin-right: 0; /* Rechter Außenabstand entfernen */
+    margin-bottom: 20px; /* Platz unter der Sidebar */
+    text-align: center; /* Navigationslinks zentrieren */
+  }
+
+  .sidebar ul {
+    flex-direction: row; /* Navigationspunkte horizontal anordnen */
+    justify-content: space-around; /* Gleichmäßig verteilen */
+    flex-wrap: wrap; /* Bei Bedarf umbrechen */
+  }
+
+  .sidebar li {
+    margin-bottom: 5px; /* Kleinere Abstände */
+  }
+
+  .sidebar a {
+    padding: 8px 12px; /* Kleineres Polster für Links */
+    font-size: 0.9em; /* Kleinere Schrift für Links */
+  }
+
+  .feedback-item {
+    flex-direction: column; /* Votes über dem Inhalt stapeln */
+    align-items: center; /* Inhalt im Element zentrieren */
+    padding: 10px; /* Etwas weniger internes Padding auf kleinen Bildschirmen */
+  }
+
+  .feedback-votes {
+    flex-direction: column; /* Vote-Buttons bleiben auch auf Mobilgerät in Spalten */
+    justify-content: center; /* Vote-Buttons zentrieren */
+    width: 100%; /* Volle Breite */
+    margin-right: 0; /* Rechten Außenabstand entfernen */
+    padding-right: 0; /* Rechtes Polster entfernen */
+    border-right: none; /* Rechten Rahmen entfernen */
+    border-bottom: 1px solid #c0d6c0; /* Unteren Rahmen hinzufügen */
+    padding-bottom: 10px; /* Polster unter den Votes */
+    margin-bottom: 15px; /* Außenabstand unter der Vote-Sektion */
+  }
+
+  .vote-count {
+    margin: 5px 0; /* Angepasster Abstand */
+  }
+
+  .feedback-content {
+    width: 100%; /* Sicherstellen, dass der Inhalt die volle Breite einnimmt */
+    padding: 0 5px; /* Leichter horizontaler Abstand vom Container */
+  }
+
+  /* Anpassungen für Text innerhalb von Wrappern, wenn padding-left des Wrappers 0 ist */
+  .question-wrapper {
+      padding-left: 0; /* Linken Abstand entfernen, um Inhaltsbreite zu maximieren */
+  }
+
+  /* Beschreibung bleibt mit Pfeil und Padding */
+  .description-wrapper {
+      padding-left: 20px;
+  }
+
+  .description-toggle-arrow {
+      left: 5px; /* Pfeilposition leicht anpassen für kleinere Bildschirme */
+  }
+}
+
+/* Für sehr kleine Bildschirme (Handys, max. 480px Breite) */
+@media (max-width: 480px) {
+  .container {
+    margin: 10px;
+    padding: 10px;
+  }
+
+  header h2 {
+    font-size: 1.8em;
+  }
+
+  h2 {
+    font-size: 1.3em;
+  }
+
+  .sidebar ul {
+    flex-direction: column; /* Navigationspunkte auf sehr kleinen Bildschirmen vertikal stapeln */
+    align-items: center; /* Elemente zentrieren */
+  }
+
+  .sidebar li {
+    width: 90%; /* Listenelemente nehmen mehr Breite ein */
+    margin-bottom: 8px;
+  }
+
+  .sidebar a {
+    font-size: 0.85em;
+    padding: 6px 10px;
+  }
+
+  .vote-button {
+    font-size: 1.2em; /* Kleinere Vote-Buttons */
+  }
+
+  .vote-count {
+    font-size: 1.2em; /* Kleinere Vote-Zählung */
+  }
+}
