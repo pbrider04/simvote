@@ -1,0 +1,339 @@
+/* Globale Regel: Wichtig für konsistente Box-Modell-Berechnung */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  background-color: #e9f5ee; /* Sehr helles Grün */
+  color: #3a4a3a; /* Dunkles Waldgrün-Grau für Text */
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 25px;
+  background-color: #f9fff9; /* Fast weiß, sehr leicht grünlich */
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column; /* Stellt sicher, dass Header und Main-Layout immer gestapelt sind */
+}
+
+header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #c0d6c0; /* Gedämpftes Hellgrün für Trennlinie */
+}
+
+header h1 {
+  color: #2f612f; /* Dunkleres Grün */
+  margin-bottom: 5px;
+  font-size: 2.5em;
+}
+
+header p {
+  color: #4a7a4a; /* Mittleres Grün */
+  font-size: 1.1em;
+}
+
+.main-layout {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column; /* Standard auf 'column' für Mobil, wird auf 'row' für Desktop geändert */
+}
+
+.sidebar {
+  flex: 0 0 200px;
+  padding-right: 20px;
+  border-right: 1px solid #c0d6c0; /* Gedämpftes Hellgrün für Trennlinie */
+  margin-right: 20px;
+  /* Diese Desktop-Styles werden in Media Query für Mobilgeräte überschrieben */
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  margin-bottom: 10px;
+}
+
+.sidebar a {
+  display: block;
+  padding: 10px 15px;
+  background-color: #d0e0d0; /* Helles Grün */
+  color: #2f612f; /* Dunkleres Grün */
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar a:hover {
+  background-color: #bad0ba; /* Etwas dunkleres Hellgrün */
+  color: #214221; /* Sehr dunkles Grün */
+}
+
+.content-area {
+  flex-grow: 1;
+}
+
+.content-section {
+  display: none;
+}
+
+.content-section.active {
+  display: block;
+}
+
+h2 {
+  color: #2f612f; /* Dunkleres Grün */
+  border-bottom: 2px solid #c0d6c0; /* Gedämpftes Hellgrün für Trennlinie */
+  padding-bottom: 10px;
+  margin-bottom: 25px;
+  font-size: 1.8em;
+}
+
+/* Feedback Form (Neue Frage) */
+#feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 40px;
+}
+
+#feedback-form input[type="text"],
+#feedback-form textarea,
+#user-name-input {
+  padding: 12px 15px;
+  border: 1px solid #b0cbb0; /* Gedämpftes Grün */
+  border-radius: 5px;
+  font-size: 1em;
+  transition: border-color 0.3s ease;
+  width: 100%;
+  background-color: #fafffa; /* Sehr hellgrünlich */
+  color: #3a4a3a;
+}
+
+#user-name-input[readonly] {
+  background-color: #e0e8e0; /* Sehr blasses Grau-Grün für Readonly */
+  cursor: not-allowed;
+}
+
+#feedback-form input[type="text"]:focus,
+#feedback-form textarea:focus {
+  border-color: #2f612f; /* Dunkleres Grün */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 97, 47, 0.25); /* Passender Schatten */
+}
+
+#feedback-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+#feedback-form button[type="submit"] {
+  background-color: #2f612f; /* Dunkleres Grün */
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.1em;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#feedback-form button[type="submit"]:hover {
+  background-color: #214221; /* Sehr dunkles Grün */
+  transform: translateY(-2px);
+}
+
+/* Feedback Liste */
+.feedback-list .feedback-items {
+  list-style: none;
+  padding: 0;
+}
+
+.feedback-item {
+  display: flex; /* Für Desktop/Tablet bleibt es flex */
+  align-items: flex-start;
+  background-color: #fffefd; /* Fast weiß */
+  border: 1px solid #c0d6c0; /* Gedämpftes Hellgrün */
+  border-radius: 7px;
+  margin-bottom: 20px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.feedback-votes {
+  display: flex;
+  flex-direction: column; /* Für Desktop/Tablet bleibt es column */
+  align-items: center;
+  margin-right: 20px;
+  padding-right: 15px;
+  border-right: 1px solid #c0d6c0; /* Gedämpftes Hellgrün */
+}
+
+.vote-button {
+  display: block;
+  font-size: 1.5em;
+  color: #4a7a4a; /* Mittleres Grün */
+  text-decoration: none;
+  padding: 5px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.vote-button.upvote:hover {
+  color: #5cb85c; /* Vibrantes Grün */
+  transform: translateY(-2px);
+}
+
+.vote-button.downvote:hover {
+  color: #b22222; /* Rot bleibt rot für Downvote */
+  transform: translateY(2px);
+}
+
+.vote-count {
+  font-size: 1.4em;
+  font-weight: bold;
+  color: #2f612f; /* Dunkleres Grün */
+  margin: 5px 0;
+}
+
+.feedback-content {
+  flex-grow: 1;
+  min-width: 0; /* Verhindert, dass Flex-Items überlaufen */
+}
+
+/* STYLES FÜR FRAGE */
+.question-wrapper {
+    position: relative;
+    margin-bottom: 8px;
+    padding-left: 20px; /* Platz für den Pfeil links */
+    line-height: 1.2em;
+    width: 100%; /* Sicherstellen, dass es die verfügbare Breite nutzt */
+}
+
+.feedback-question-short {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 1.4em;
+    color: #2f612f; /* Dunkleres Grün */
+    padding-bottom: 0;
+    max-width: 100%; /* Wichtig für ellipsis und um Überlauf zu verhindern */
+}
+
+.feedback-question-full {
+    display: none;
+    white-space: pre-wrap;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 1.4em;
+    color: #2f612f; /* Dunkleres Grün */
+    padding-bottom: 0;
+    max-width: 100%; /* Wichtig für Textumbrüche */
+}
+
+.question-toggle-arrow {
+    position: absolute;
+    left: 0; /* Positionierung links */
+    top: 0;
+    cursor: pointer;
+    color: #4a7a4a; /* Mittleres Grün */
+    font-weight: bold;
+    font-size: 1.1em;
+    padding-right: 5px; /* Abstand zum Text */
+    background-color: #fffefd;
+}
+
+/* STYLES FÜR BESCHREIBUNG */
+.description-wrapper {
+    position: relative;
+    margin-bottom: 10px;
+    padding-left: 20px; /* Platz für den Pfeil links */
+    width: 100%; /* Sicherstellen, dass es die verfügbare Breite nutzt */
+}
+
+.feedback-description-short {
+    white-space: nowrap; /* Text nicht umbrechen und auf einer Zeile halten */
+    overflow: hidden; /* Überlaufenden Text verstecken */
+    text-overflow: ellipsis; /* Pünktchen anzeigen */
+    /* Die folgenden Eigenschaften wurden entfernt, um den Text auf eine Zeile zu beschränken:
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; */
+    margin-bottom: 0;
+    padding-bottom: 0;
+    line-height: 1.4em;
+    max-width: 100%; /* Wichtig für Textumbrüche und Ellipsis */
+}
+
+.feedback-description-full {
+    display: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    white-space: pre-wrap;
+    max-width: 100%; /* Wichtig für Textumbrüche */
+}
+
+.description-toggle-arrow {
+    position: absolute;
+    left: 0; /* Positionierung links */
+    top: 0;
+    cursor: pointer;
+    color: #4a7a4a; /* Mittleres Grün */
+    font-weight: bold;
+    font-size: 1.1em;
+    padding-right: 5px; /* Abstand zum Text */
+    background-color: #fffefd;
+}
+
+.feedback-meta {
+  font-size: 0.9em;
+  color: #778877; /* Grau-Grün */
+}
+
+.upvoters-list {
+    font-size: 0.9em;
+    color: #556655; /* Etwas dunkleres Grau-Grün */
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px dashed #c0d6c0; /* Gedämpftes Hellgrün */
+}
+
+.no-feedback {
+  text-align: center;
+  color: #778877; /* Grau-Grün */
+  padding: 20px;
+  border: 1px dashed #c0d6c0; /* Gedämpftes Hellgrün */
+  border-radius: 5px;
+  margin-top: 30px;
+}
+
+/* Explanation Section */
+.explanation-text {
+  background-color: #eefaf1; /* Sehr helles Grün */
+  border: 1px solid #b0cbb0; /* Gedämpftes Grün */
+  border-radius: 5px;
+  padding: 20px;
+  line-height: 1.8;
+  color: #3a4a3a; /* Dunkles Waldgrün-Grau */
+}
+
+.explanation-text p {
+  margin-bottom: 10px;
+}
+
+.explanation-text p:last-child {
+  margin-bottom: 0;
+}
+
+.explanation-text strong {
+  color: #4a7a4a; /* Mittleres Grün

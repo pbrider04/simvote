@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SimVote - Feedback App</title>
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SimVote</h1>
+      <p>A simple feedback tool.</p>
+    </header>
+
+    <div class="main-layout">
+      <nav class="sidebar">
+        <ul>
+          <li><a href="#" id="show-existing">Bestehende Fragen</a></li>
+          <li><a href="#" id="show-new">Neue Frage</a></li>
+          <li><a href="#" id="show-explanation">Erklärung</a></li>
+        </ul>
+      </nav>
+
+      <div class="content-area">
+        <section id="existing-feedback-section" class="content-section active">
+          <h2>Bestehende Fragen</h2>
+          {% if feedbacks %}
+            <ul class="feedback-items">
+              {% for fb in feedbacks %}
+                <li class="feedback-item">
+                  <div class="feedback-votes">
+                    <a href="#" class="vote-button upvote" data-fid="{{ fb['id'] }}" data-direction="up">▲</a>
+                    <span class="vote-count">{{ fb['votes'] }}</span>
+                    <a href="#" class="vote-button downvote" data-fid="{{ fb['id'] }}" data-direction="down">▼</a>
+                  </div>
+                  <div class="feedback-content">
+                    <div class="question-wrapper">
+                        <h3 class="feedback-question-short">{{ fb['question'] }}</h3>
+                        <h3 class="feedback-question-full">{{ fb['question'] }}</h3>
+                        <span class="question-toggle-arrow" data-target-id="question-{{ fb['id'] }}">▶</span>
+                    </div>
+
+                    <div class="description-wrapper">
+                        <span class="description-toggle-arrow" data-target-id="desc-{{ fb['id'] }}">▶</span>
+                        <p class="feedback-description-short">{{ fb['description'] }}</p>
+                        <p class="feedback-description-full">{{ fb['description'] }}</p>
+                    </div>
+                    <p class="feedback-meta">
+                      Eingereicht von: <strong>{{ fb['name'] }}</strong>
+                      {% if fb['timestamp'] %} am {{ fb['timestamp'] }}{% endif %}
+                    </p>
+                    <p class="upvoters-list">Upvoter:
+                        {% if fb['upvoters'] %}
+                            {% set upvoter_names = fb['upvoters'] | from_json %}
+                            {% if upvoter_names %}
+                                {{ upvoter_names | join(', ') }}
+                            {% else %}
+                                Keiner
+                            {% endif %}
+                        {% else %}
+                            Keiner
+                        {% endif %}
+                    </p>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="no-feedback">Noch keine Fragen gestellt. Sei der Erste!</p>
+          {% endif %}
+        </section>
+
+        <section id="new-question-section" class="content-section">
+          <h2>Neue Frage stellen</h2>
+          <form method="POST" action="/submit" id="feedback-form">
+            <input type="text" name="name" id="user-name-input" placeholder="Dein Name" required readonly>
+            <input type="text" name="question" id="question-input" placeholder="Deine Frage/Thema" required>
+            <textarea name="description" id="description-textarea" placeholder="Weitere Details zur Frage..."></textarea>
+            <button type="submit" id="submit-button">Frage einreichen</button>
+          </form>
+        </section>
+
+        <section id="explanation-section" class="content-section">
+          <h2>Erklärung zur App</h2>
+          <div class="explanation-text">
+            <p>Diese einfache Feedback-Anwendung ermöglicht es Nutzern, Fragen oder Themen einzureichen und über bestehende Beiträge abzustimmen. Jeder Beitrag hat eine Frage, eine optionale Beschreibung und den Namen des Einreichenden.</p>
+            <p><strong>Bestehende Fragen:</strong> Hier sehen Sie alle eingereichten Fragen, sortiert nach der Anzahl der Upvotes. Sie können Fragen up- oder downvoten. Ihre Stimme wird gezählt und Ihr Name wird in der Liste der Upvoter eingetragen (nur bei Upvotes).</p>
+            <p><strong>Neue Frage:</strong> Hier können Sie eine neue Frage oder ein neues Thema einreichen. Ihr Name wird automatisch aus Ihrem Browser-Speicher vorausgefüllt und ist nicht änderbar, sobald er einmal festgelegt wurde.</p>
+            <p><strong>Upvoting:</strong> Wenn Sie einen Beitrag upvoten, wird Ihr Name in der Liste der Upvoter dieses Beitrags gespeichert. Sie können einen Beitrag nur einmal upvoten.</p>
+            <p>Viel Spaß beim Geben und Empfangen von Feedback!</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function saveUserName(name) {
+      if (typeof(Storage) !== "undefined") {
+        localStorage.setItem("simvote_username", name);
+      }
+    }
+
+    function loadUserName() {
+      if (typeof(Storage) !== "undefined") {
+        return localStorage.getItem("simvote_username");
+      }
+      return null;
+    }
+
+    function initializeUserNameInput() {
+      const userNameInput = document.getElementById('user-name-input');
+      let storedUserName = loadUserName();
+
+      if (storedUserName) {
+        userNameInput.value = storedUserName;
+        userNameInput.readOnly = true;
+      } else {
+        userNameInput.value = '';
+        userNameInput.readOnly = false;
+        userNameInput.focus();
+        userNameInput.addEventListener('blur', () => {
+            if (userNameInput.value.trim() !== '') {
+                saveUserName(userNameInput.value.trim());
+                userNameInput.readOnly = true;
+                attachVoteEventListeners();
+            }
+        });
+      }
+      return storedUserName;
+    }
+
+    function attachVoteEventListeners() {
+      document.querySelectorAll('.vote-button').forEach(button => {
+        button.removeEventListener('click', handleVoteClick);
+        button.addEventListener('click', handleVoteClick);
+      });
+    }
+
+    function handleVoteClick(event) {
+        event.preventDefault();
+        const button = event.currentTarget;
+        const fid = button.dataset.fid;
+        const direction = button.dataset.direction;
+        const userName = loadUserName();
+
+        if (!userName) {
+            alert("Bitte gib zuerst deinen Namen unter 'Neue Frage' ein, bevor du abstimmst.");
+            showSection('new-question-section');
+            initializeUserNameInput();
+            return;
+        }
+
+        const voteUrl = `/vote/${fid}/${direction}/${userName}`;
+        window.location.href = voteUrl;
+    }
+
+    const sections = document.querySelectorAll('.content-section');
+    const navLinks = {
+      'show-existing': 'existing-feedback-section',
+      'show-new': 'new-question-section',
+      'show-explanation': 'explanation-section'
+    };
+
+    function showSection(id) {
+      sections.forEach(section => {
+        if (section.id === id) {
+          section.classList.add('active');
+        } else {
+          section.classList.remove('active');
+        }
+      });
+    }
+
+    function setupDescriptionToggles() {
+        document.querySelectorAll('.description-wrapper').forEach(wrapper => {
+            const shortDesc = wrapper.querySelector('.feedback-description-short');
+            const fullDesc = wrapper.querySelector('.feedback-description-full');
+            const toggleArrow = wrapper.querySelector('.description-toggle-arrow');
+
+            const isTextLong = fullDesc.textContent.length > 80 || fullDesc.textContent.includes('\n');
+
+            if (isTextLong) {
+                toggleArrow.style.display = 'inline-block';
+                shortDesc.style.display = 'block';
+                fullDesc.style.display = 'none';
+            } else {
+                toggleArrow.style.display = 'none';
+                shortDesc.style.display = 'block';
+                fullDesc.style.display = 'none';
+            }
+
+            toggleArrow.onclick = () => {
+                if (shortDesc.style.display === 'block') {
+                    shortDesc.style.display = 'none';
+                    fullDesc.style.display = 'block';
+                    toggleArrow.textContent = '▼';
+                } else {
+                    shortDesc.style.display = 'block';
+                    fullDesc.style.display = 'none';
+                    toggleArrow.textContent = '▶';
+                }
+            };
+        });
+    }
+
+    function setupQuestionToggles() {
+        document.querySelectorAll('.question-wrapper').forEach(wrapper => {
+            const shortQuestion = wrapper.querySelector('.feedback-question-short');
+            const fullQuestion = wrapper.querySelector('.feedback-question-full');
+            const toggleArrow = wrapper.querySelector('.question-toggle-arrow');
+
+            const isQuestionLong = fullQuestion.scrollWidth > shortQuestion.offsetWidth || fullQuestion.textContent.length > 50; // Increased length check
+
+            if (isQuestionLong) {
+                toggleArrow.style.display = 'inline-block';
+                shortQuestion.style.display = 'block';
+                fullQuestion.style.display = 'none';
+            } else {
+                toggleArrow.style.display = 'none';
+                shortQuestion.style.display = 'block';
+                fullQuestion.style.display = 'none';
+            }
+
+            toggleArrow.onclick = () => {
+                if (shortQuestion.style.display === 'block') {
+                    shortQuestion.style.display = 'none';
+                    fullQuestion.style.display = 'block';
+                    toggleArrow.textContent = '▼';
+                } else {
+                    shortQuestion.style.display = 'block';
+                    fullQuestion.style.display = 'none';
+                    toggleArrow.textContent = '▶';
+                }
+            };
+        });
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const feedbackForm = document.getElementById('feedback-form');
+        if (feedbackForm) {
+            feedbackForm.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && event.target.tagName !== 'TEXTAREA') {
+                    event.preventDefault();
+                    document.getElementById('submit-button').click();
+                }
+            });
+        }
+
+        for (const [linkId, sectionId] of Object.entries(navLinks)) {
+            document.getElementById(linkId).addEventListener('click', (event) => {
+                event.preventDefault();
+                showSection(sectionId);
+                if (sectionId === 'new-question-section') {
+                    initializeUserNameInput();
+                }
+                if (sectionId === 'existing-feedback-section') {
+                    attachVoteEventListeners();
+                    setupDescriptionToggles();
+                    setupQuestionToggles();
+                }
+            });
+        }
+
+        showSection('existing-feedback-section');
+        attachVoteEventListeners();
+        setupDescriptionToggles();
+        setupQuestionToggles();
+        initializeUserNameInput();
+    });
+  </script>
+</body>
+</html>
