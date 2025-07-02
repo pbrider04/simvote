@@ -18,10 +18,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # Mount static files correctly, giving it a 'name'
+# Passen Sie diesen Pfad an, falls sich Ihr 'static' Ordner relativ zu main.py geändert hat.
+# Basierend auf früheren Beispielen war er direkt neben main.py, also ist BASE_DIR ausreichend.
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
+
 # Database configuration
-DATABASE_URL = 'feedback.db'
+# Der Pfad zur Datenbankdatei ist jetzt im gemounteten 'data'-Verzeichnis
+DATABASE_URL = os.path.join(BASE_DIR, 'data', 'feedback.db') # <-- NEU
 
 # Global variable for config
 config = {}
@@ -34,6 +38,12 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # Stellen Sie sicher, dass das Verzeichnis existiert, bevor Sie versuchen, die DB zu erstellen
+    db_dir = os.path.dirname(DATABASE_URL)
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir) # Erstellt das Verzeichnis, falls es nicht existiert (im Container)
+        
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS feedback (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,12 +56,12 @@ def init_db():
         )
     ''')
     
+    # ... Rest der init_db() Funktion bleibt gleich ...
     # Add upvoter_data column if it doesn't exist (for existing databases)
     try:
         cursor.execute("SELECT upvoter_data FROM feedback LIMIT 1")
     except sqlite3.OperationalError:
         cursor.execute("ALTER TABLE feedback ADD COLUMN upvoter_data TEXT DEFAULT '[]'")
-        
     conn.commit()
     conn.close()
 

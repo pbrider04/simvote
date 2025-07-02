@@ -5,4 +5,4 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./feedback.db:/app/feedback.db
+      - ./data:/app/data
