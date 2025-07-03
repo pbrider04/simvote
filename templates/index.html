@@ -18,8 +18,12 @@
     <div class="main-layout">
         <nav class="sidebar">
             <ul>
-                <li><a href="#" id="show-new-feedback">Neue Frage</a></li>
-                <li><a href="#" id="show-existing">Bestehende Fragen</a></li>
+                <li>
+                    <a href="#" id="show-new-feedback">Neue Frage</a>
+                </li>
+                <li>
+                    <a href="#" id="show-existing">Bestehende Fragen</a>
+                </li>
                 {# Table link, initially hidden, shown by Ctrl+T #}
                 <li id="table-nav-item" style="display: none;"><a href="{{ url_for('show_table') }}" id="show-table-nav">Feedback-Tabelle</a></li>
             </ul>
@@ -27,7 +31,11 @@
         
         <div class="content-area">
             <section id="new-feedback-section" class="content-section">
-                <h2>Neue Frage stellen</h2>
+                <h2>Neue Frage stellen <i class="fas fa-info-circle info-icon" data-target="new-feedback-explanation" title="Informationen anzeigen"></i></h2>
+                <div id="new-feedback-explanation" class="explanation-text hidden">
+                    <p>Hier können Sie Ihre Fragen oder Feedback-Einträge anonym oder unter einem selbstgewählten Namen einreichen. Ihre ID wird lokal gespeichert, um Ihre Upvotes zu verfolgen und doppelte Abstimmungen zu verhindern.</p>
+                    <p>Nutzen Sie das Feld "Ihr Name", um einen Namen für Ihren Beitrag festzulegen. Standardmäßig ist dies "Anonym". Sie können Ihren Namen jederzeit bearbeiten, indem Sie auf das Stift-Symbol klicken.</p>
+                </div>
                 <form id="feedback-form" action="{{ url_for('submit_feedback') }}" method="post">
                     <input type="hidden" id="feedback-id-input" name="feedback_id"> {# Hidden field for ID #}
                     <input type="hidden" id="form-upvoter-id-input" name="upvoter_id"> {# Hidden field for upvoter_id for new submissions/updates #}
@@ -47,8 +55,8 @@
             </section>
 
             <section id="existing-feedback-section" class="content-section active">
-                <h2>Bestehende Fragen</h2>
-                <div class="explanation-text">
+                <h2>Bestehende Fragen <i class="fas fa-info-circle info-icon" data-target="existing-feedback-explanation" title="Informationen anzeigen"></i></h2>
+                <div id="existing-feedback-explanation" class="explanation-text hidden">
                     <p>Willkommen bei <strong>simvote</strong>, dem einfachen Feedback-Tool! Hier können Sie:</p>
                     <ul>
                         <li>Ihre Fragen oder Feedback-Einträge anonym oder unter einem selbstgewählten Namen einreichen.</li>
@@ -56,7 +64,7 @@
                         <li>Ihre eigenen Beiträge bearbeiten.</li>
                     </ul>
                     <p>Auf diese Weise helfen Sie, wichtige Themen zu identifizieren und zu priorisieren. Ihre ID wird lokal gespeichert, um Ihre Upvotes zu verfolgen und doppelte Abstimmungen zu verhindern.</p>
-                </div>
+                 </div>
                 <div class="feedback-list">
                     <ul class="feedback-items">
                         {% for fb in feedbacks %}

@@ -78,6 +78,9 @@ header p {
 
 .sidebar li {
   margin: 5px; /* Abstand zwischen Buttons */
+  display: flex; /* Makes the list item a flex container */
+  align-items: center; /* Vertically centers content within li */
+  gap: 5px; /* Space between anchor and icon */
 }
 
 .sidebar a {
@@ -95,6 +98,19 @@ header p {
   background-color: #bad0ba; /* Etwas dunkleres Hellgrün */
   color: #214221; /* Sehr dunkles Grün */
 }
+
+/* Info icon style */
+.info-icon {
+    color: #4a7a4a; /* Medium green */
+    cursor: pointer;
+    font-size: 1.2em;
+    transition: color 0.2s ease;
+}
+
+.info-icon:hover {
+    color: #2f612f; /* Darker green on hover */
+}
+
 
 .content-area {
   flex-grow: 1;
@@ -373,6 +389,7 @@ h2 {
   padding: 20px;
   line-height: 1.8;
   color: #3a4a3a; /* Dunkles Waldgrün-Grau */
+  margin-bottom: 25px; /* Add margin below explanation */
 }
 
 .explanation-text p {
@@ -385,6 +402,10 @@ h2 {
 
 .explanation-text strong {
   color: #4a7a4a; /* Mittleres Grün */
+}
+
+.explanation-text.hidden {
+    display: none; /* Initially hide the explanation text */
 }
 
 /* --- Table Specific Styles --- */
@@ -528,6 +549,7 @@ h2 {
 
   .sidebar li {
     margin-bottom: 5px; /* Kleinere Abstände */
+    justify-content: center; /* Center items within li */
   }
 
   .sidebar a {
@@ -590,23 +612,6 @@ h2 {
 
   h2 {
     font-size: 1.3em;
-  }
-
-  .feedback-votes {
-    flex-direction: column; /* Vote-Buttons bleiben auch auf Mobilgerät in Spalten */
-    justify-content: center; /* Vote-Buttons zentrieren */
-    width: 10%; /* Volle Breite */
-    margin-right: 0; /* Rechten Außenabstand entfernen */
-    padding-right: 0; /* Rechtes Polster entfernen */
-    border-right: none; /* Rechten Rahmen entfernen */
-    border-bottom: 1px solid #c0d6c0; /* Unteren Rahmen hinzufügen */
-    padding-bottom: 10px; /* Polster unter den Votes */
-    margin-bottom: 15px; /* Außenabstand unter der Vote-Sektion */
-  }
-  .feedback-item {
-    flex-direction: row; /* Votes über dem Inhalt stapeln */
-    align-items: center; /* Inhalt im Element zentrieren */
-    padding: 10px; /* Etwas weniger internes Padding auf kleinen Bildschirmen */
   }
 
   .sidebar ul {

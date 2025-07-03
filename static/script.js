@@ -208,11 +208,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Ctrl+T to show Table Link ---
     document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.key === 't') {
+        if ( e.key === 't') {
             e.preventDefault(); // Prevent default browser action (e.g., opening a new tab)
             if (tableNavItem) {
                 tableNavItem.style.display = 'block'; // Or 'inline-block' depending on desired layout
             }
         }
+    });
+
+    // --- Info Icon Toggle for Explanation Text ---
+    document.querySelectorAll('.info-icon').forEach(icon => {
+        icon.addEventListener('click', () => {
+            const targetId = icon.dataset.target;
+            const explanationDiv = document.getElementById(targetId);
+            if (explanationDiv) {
+                explanationDiv.classList.toggle('hidden');
+            }
+        });
     });
 });
