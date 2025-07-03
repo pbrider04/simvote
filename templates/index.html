@@ -20,7 +20,8 @@
             <ul>
                 <li><a href="#" id="show-new-feedback">Neue Frage</a></li>
                 <li><a href="#" id="show-existing">Bestehende Fragen</a></li>
-                <li><a href="{{ url_for('show_table') }}" id="show-table-nav">Feedback-Tabelle</a></li>
+                {# Table link, initially hidden, shown by Ctrl+T #}
+                <li id="table-nav-item" style="display: none;"><a href="{{ url_for('show_table') }}" id="show-table-nav">Feedback-Tabelle</a></li>
             </ul>
         </nav>
         
@@ -48,7 +49,13 @@
             <section id="existing-feedback-section" class="content-section active">
                 <h2>Bestehende Fragen</h2>
                 <div class="explanation-text">
-                    <p>Hier können Sie bestehende Fragen und Feedback-Einträge sehen und bewerten. Klicken Sie auf den Pfeil neben einer Beschreibung, um sie vollständig anzuzeigen.</p>
+                    <p>Willkommen bei <strong>simvote</strong>, dem einfachen Feedback-Tool! Hier können Sie:</p>
+                    <ul>
+                        <li>Ihre Fragen oder Feedback-Einträge anonym oder unter einem selbstgewählten Namen einreichen.</li>
+                        <li>Bestehende Beiträge ansehen und per Up- oder Downvote bewerten.</li>
+                        <li>Ihre eigenen Beiträge bearbeiten.</li>
+                    </ul>
+                    <p>Auf diese Weise helfen Sie, wichtige Themen zu identifizieren und zu priorisieren. Ihre ID wird lokal gespeichert, um Ihre Upvotes zu verfolgen und doppelte Abstimmungen zu verhindern.</p>
                 </div>
                 <div class="feedback-list">
                     <ul class="feedback-items">
@@ -76,7 +83,7 @@
                                 </p>
                                 {% if fb['upvoter_names_list'] %}
                                 <p class="all-upvoters-list">
-                                    Unterstützer:inen: {{ fb['upvoter_names_list'] | join(', ') }}
+                                    Upvoter: {{ fb['upvoter_names_list'] | join(', ') }}
                                 </p>
                                 {% endif %}
                             </div>

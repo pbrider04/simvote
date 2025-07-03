@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const showExistingBtn = document.getElementById('show-existing');
     const newFeedbackSection = document.getElementById('new-feedback-section');
     const existingFeedbackSection = document.getElementById('existing-feedback-section');
+    const tableNavItem = document.getElementById('table-nav-item'); // Get the table navigation list item
+
 
     const formQuestionInput = document.getElementById('form-question');
     const formDescriptionInput = document.getElementById('form-description');
@@ -202,4 +204,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize form with current user's name on load
     formNameInput.value = localStorage.getItem('userName') || 'Anonym';
+
+
+    // --- Ctrl+T to show Table Link ---
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 't') {
+            e.preventDefault(); // Prevent default browser action (e.g., opening a new tab)
+            if (tableNavItem) {
+                tableNavItem.style.display = 'block'; // Or 'inline-block' depending on desired layout
+            }
+        }
+    });
 });
