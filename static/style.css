@@ -580,6 +580,23 @@ h2 {
     font-size: 1.3em;
   }
 
+  .feedback-votes {
+    flex-direction: column; /* Vote-Buttons bleiben auch auf Mobilgerät in Spalten */
+    justify-content: center; /* Vote-Buttons zentrieren */
+    width: 10%; /* Volle Breite */
+    margin-right: 0; /* Rechten Außenabstand entfernen */
+    padding-right: 0; /* Rechtes Polster entfernen */
+    border-right: none; /* Rechten Rahmen entfernen */
+    border-bottom: 1px solid #c0d6c0; /* Unteren Rahmen hinzufügen */
+    padding-bottom: 10px; /* Polster unter den Votes */
+    margin-bottom: 15px; /* Außenabstand unter der Vote-Sektion */
+  }
+  .feedback-item {
+    flex-direction: row; /* Votes über dem Inhalt stapeln */
+    align-items: center; /* Inhalt im Element zentrieren */
+    padding: 10px; /* Etwas weniger internes Padding auf kleinen Bildschirmen */
+  }
+
   .sidebar ul {
     flex-direction: column; /* Navigationspunkte auf sehr kleinen Bildschirmen vertikal stapeln */
     align-items: center; /* Elemente zentrieren */
