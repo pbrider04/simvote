@@ -292,24 +292,26 @@ h2 {
     overflow: hidden; /* Sicherstellen, dass Überlauf im Wrapper selbst gekappt wird */
 }
 
-.feedback-description-short {
-    white-space: nowrap; /* Text nicht umbrechen und auf einer Zeile halten */
-    overflow: hidden; /* Überlaufenden Text verstecken */
-    text-overflow: ellipsis; /* Pünktchen anzeigen */
+/* Standardzustand der Beschreibung (ausgeklappt) */
+.feedback-description {
     margin-bottom: 0;
     padding-bottom: 0;
     line-height: 1.4em;
-    /* Adjust max-width to account for the padding of the parent wrapper */
-    max-width: calc(100% - 20px); /* 20px ist der padding-left von description-wrapper */
-}
-
-.feedback-description-full {
-    display: none; /* Initial ausgeblendet */
-    margin-bottom: 0;
-    padding-bottom: 0;
+    max-width: 100%; /* Wichtig für Textumbrüche */
     white-space: pre-wrap; /* Behält Zeilenumbrüche bei und ermöglicht Umbruch bei langen Wörtern */
     word-wrap: break-word; /* Fallback für IE */
-    max-width: 100%; /* Wichtig für Textumbrüche */
+    overflow: visible; /* Standardmäßig sichtbar */
+    text-overflow: clip; /* Standardmäßig kein Ellipsis */
+    max-height: none; /* Standardmäßig keine Höhenbegrenzung */
+    transition: max-height 0.3s ease-out; /* Sanfter Übergang für die Höhe */
+}
+
+/* Zustand der Beschreibung, wenn sie eingeklappt ist */
+.feedback-description.collapsed {
+    white-space: nowrap; /* Text nicht umbrechen und auf einer Zeile halten */
+    overflow: hidden; /* Überlaufenden Text verstecken */
+    text-overflow: ellipsis; /* Pünktchen anzeigen */
+    max-height: 1.4em; /* Begrenzt auf eine Zeile (passen Sie dies an Ihre Schriftgröße an) */
 }
 
 .description-toggle-arrow {
@@ -322,7 +324,13 @@ h2 {
     font-size: 1.1em;
     padding-right: 5px; /* Abstand zum Text */
     background-color: #fffefd;
+    transition: transform 0.2s ease; /* Sanfter Übergang für die Rotation */
 }
+
+.description-toggle-arrow.expanded {
+    transform: rotate(180deg); /* Pfeil nach oben drehen, wenn ausgeklappt */
+}
+
 
 .feedback-meta {
   font-size: 0.9em;
