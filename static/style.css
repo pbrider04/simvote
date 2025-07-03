@@ -262,26 +262,44 @@ h2 {
   min-width: 0; /* Verhindert, dass Flex-Items überlaufen */
 }
 
-/* STYLES FÜR FRAGE (VEREINFACHT: KEINE TOGGLES) */
+/* STYLES FÜR FRAGE */
 .question-wrapper {
     position: relative;
     margin-bottom: 8px;
-    padding-left: 0; /* Kein Padding mehr, da kein Pfeil */
+    padding-left: 0; 
     line-height: 1.2em;
     width: 100%;
+    display: flex; /* Use flexbox for question and icon */
+    align-items: center; /* Align items vertically */
+    gap: 8px; /* Space between question and icon */
 }
 
-.feedback-question { /* Nur noch eine Klasse für Fragen */
-    white-space: normal; /* Erlaubt normalen Zeilenumbruch */
-    overflow-wrap: break-word; /* Stellt sicher, dass lange Wörter umbrechen */
-    word-wrap: break-word; /* Fallback für IE */
+.feedback-question {
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
     margin-top: 0;
     margin-bottom: 0;
     font-size: 1.4em;
     color: #2f612f;
     padding-bottom: 0;
-    max-width: 100%;
+    max-width: calc(100% - 30px); /* Adjust max-width for icon to leave space */
 }
+
+/* Edit Icon */
+.edit-feedback-icon {
+    font-size: 1.1em;
+    color: #778877; /* Subtle color */
+    cursor: pointer;
+    transition: color 0.2s ease;
+    flex-shrink: 0; /* Prevent icon from shrinking */
+    display: none; /* Hidden by default, shown by JS */
+}
+
+.edit-feedback-icon:hover {
+    color: #4a7a4a; /* Slightly more visible on hover */
+}
+
 
 /* STYLES FÜR BESCHREIBUNG */
 .description-wrapper {
@@ -323,13 +341,7 @@ h2 {
     font-size: 1.1em;
     padding-right: 5px; /* Abstand zum Text */
     background-color: #fffefd;
-    /* transition: transform 0.2s ease; -- DIESE ZEILE ENTFERNT */
 }
-
-/* .description-toggle-arrow.expanded { -- DIESE REGEL KOMPLETT ENTFERNT */
-/* transform: rotate(90deg); */
-/* } */
-
 
 .feedback-meta {
   font-size: 0.9em;

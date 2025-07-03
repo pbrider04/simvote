@@ -5,11 +5,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const newFeedbackSection = document.getElementById('new-feedback-section');
     const existingFeedbackSection = document.getElementById('existing-feedback-section');
 
+    const formQuestionInput = document.getElementById('form-question');
+    const formDescriptionInput = document.getElementById('form-description');
+    const formNameInput = document.getElementById('user-name-input'); // Re-using this for form population
+    const feedbackIdInput = document.getElementById('feedback-id-input');
+    const formUpvoterIdInput = document.getElementById('form-upvoter-id-input'); // Hidden input for upvoter_id in form
+    const submitFeedbackButton = document.getElementById('submit-feedback-button');
+    const feedbackForm = document.getElementById('feedback-form');
+
+
     if (showNewFeedbackBtn) {
         showNewFeedbackBtn.addEventListener('click', (e) => {
             e.preventDefault();
             newFeedbackSection.classList.add('active');
             existingFeedbackSection.classList.remove('active');
+            resetFeedbackForm(); // Reset form when switching to new feedback
         });
     }
 
@@ -18,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             existingFeedbackSection.classList.add('active');
             newFeedbackSection.classList.remove('active');
+            resetFeedbackForm(); // Reset form when switching to existing feedback
         });
     }
 
@@ -43,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('upvoterId', upvoterId);
     }
     upvoterIdDisplay.textContent = `Ihre ID: ${upvoterId}`;
+    formUpvoterIdInput.value = upvoterId; // Set hidden upvoter_id for form submissions
 
     // Load or set user name
     let userName = localStorage.getItem('userName');
@@ -134,15 +146,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isCollapsed) {
                     // Ausklappen
                     descriptionParagraph.classList.remove('collapsed');
-                    // arrow.classList.add('expanded'); // Diese Klasse ist nicht mehr für die Rotation nötig
                     arrow.textContent = '▼'; // Pfeil nach unten
                 } else {
                     // Einklappen
                     descriptionParagraph.classList.add('collapsed');
-                    // arrow.classList.remove('expanded'); // Diese Klasse ist nicht mehr für die Rotation nötig
                     arrow.textContent = '▶'; // Pfeil nach rechts
                 }
             }
         });
     });
+
+    // --- Edit Feedback Logic ---
+    function resetFeedbackForm() {
+        feedbackIdInput.value = '';
+        formQuestionInput.value = '';
+        formDescriptionInput.value = '';
+        formNameInput.value = localStorage.getItem('userName') || 'Anonym'; // Reset name to stored name
+        submitFeedbackButton.textContent = 'Frage einreichen';
+        document.getElementById('new-feedback-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.querySelectorAll('.feedback-item').forEach(item => {
+        const itemUpvoterId = item.dataset.upvoterId;
+        const editIcon = item.querySelector('.edit-feedback-icon');
+
+        if (editIcon && itemUpvoterId === upvoterId) {
+            editIcon.style.display = 'inline-block'; // Show edit icon for own posts
+
+            editIcon.addEventListener('click', () => {
+                // Populate the form with existing data
+                feedbackIdInput.value = item.dataset.feedbackId;
+                formQuestionInput.value = item.dataset.question;
+                formDescriptionInput.value = item.dataset.description;
+                formNameInput.value = item.dataset.name; // Use the name from the feedback item
+                formUpvoterIdInput.value = item.dataset.upvoterId; // Ensure correct upvoter_id is set for update
+
+                submitFeedbackButton.textContent = 'Frage aktualisieren';
+
+                // Switch to the new feedback section and scroll to the form
+                newFeedbackSection.classList.add('active');
+                existingFeedbackSection.classList.remove('active');
+                document.getElementById('new-feedback-section').scrollIntoView({ behavior: 'smooth' });
+            });
+        }
+    });
+
+    // Handle form submission to ensure upvoter_id is always sent
+    feedbackForm.addEventListener('submit', (e) => {
+        // Ensure the upvoter_id in the hidden input is correctly set
+        // This is primarily for new submissions, for updates it's already set by the edit logic
+        if (!formUpvoterIdInput.value) {
+            formUpvoterIdInput.value = localStorage.getItem('upvoterId') || generateUUID();
+        }
+    });
+
+    // Initialize form with current user's name on load
+    formNameInput.value = localStorage.getItem('userName') || 'Anonym';
 });

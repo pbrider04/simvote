@@ -1,13 +1,16 @@
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 import sqlite3
 import os
 import json
+import io # Import io for CSV export
+import csv # Import csv for CSV export
+from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse # Import StreamingResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from typing import List, Dict, Optional
 from datetime import datetime
-import io
-import csv
+import uuid
+import uvicorn # Import uvicorn
 
 app = FastAPI()
 
@@ -22,13 +25,12 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 # Basierend auf früheren Beispielen war er direkt neben main.py, also ist BASE_DIR ausreichend.
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
-
 # Database configuration
 # Der Pfad zur Datenbankdatei ist jetzt im gemounteten 'data'-Verzeichnis
 DATABASE_URL = os.path.join(BASE_DIR, 'data', 'feedback.db') # <-- NEU
 
-# Global variable for config
-config = {}
+# Global variable to store configuration
+app_config = {}
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE_URL)
@@ -52,203 +54,165 @@ def init_db():
             name TEXT NOT NULL,
             votes INTEGER DEFAULT 0,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            upvoter_data TEXT DEFAULT '[]'
+            upvoter_id TEXT,
+            upvoters TEXT DEFAULT ''
         )
     ''')
     
-    # ... Rest der init_db() Funktion bleibt gleich ...
-    # Add upvoter_data column if it doesn't exist (for existing databases)
-    try:
-        cursor.execute("SELECT upvoter_data FROM feedback LIMIT 1")
-    except sqlite3.OperationalError:
-        cursor.execute("ALTER TABLE feedback ADD COLUMN upvoter_data TEXT DEFAULT '[]'")
+    cursor.execute("PRAGMA table_info(feedback)")
+    columns = [col[1] for col in cursor.fetchall()]
+    if 'upvoter_id' not in columns:
+        cursor.execute("ALTER TABLE feedback ADD COLUMN upvoter_id TEXT")
+    if 'upvoters' not in columns:
+        cursor.execute("ALTER TABLE feedback ADD COLUMN upvoters TEXT DEFAULT ''")
+
     conn.commit()
     conn.close()
 
+# Load configuration on startup
 def load_config():
-    global config
-    config_path = os.path.join(BASE_DIR, "config.json")
-    try:
+    config_path = os.path.join(BASE_DIR, 'config.json')
+    if os.path.exists(config_path):
         with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-    except FileNotFoundError:
-        print(f"Error: config.json not found at {config_path}. Using empty config.")
-        config = {}
-    except json.JSONDecodeError:
-        print(f"Error: Could not decode config.json at {config_path}. Check JSON format.")
-        config = {}
+            return json.load(f)
+    return {
+        "app_title": "Default App Title",
+        "app_description": "Default App Description",
+        "logo_path": "/static/default_logo.png"
+    }
 
-
-# Initialize the database and load config on startup
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     init_db()
-    load_config()
-
+    global app_config
+    app_config = load_config()
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    conn = get_db_connection()
-    feedbacks_raw = conn.execute('SELECT * FROM feedback ORDER BY votes DESC, timestamp DESC').fetchall()
+    db = get_db_connection()
+    feedbacks = db.execute('SELECT * FROM feedback ORDER BY votes DESC, timestamp DESC').fetchall()
     
-    feedbacks = []
-    for fb_row in feedbacks_raw:
-        fb = dict(fb_row) # Convert Row object to dict for easier manipulation
-        try:
-            upvoter_list = json.loads(fb['upvoter_data'])
-            # Extract names for display and count unique IDs for votes
-            upvoter_names = [voter['name'] for voter in upvoter_list if 'name' in voter]
-            
-            fb['upvoter_names_list'] = upvoter_names # For display in template
-            fb['votes'] = len(upvoter_list) # Votes are now derived from unique upvoter IDs
-        except json.JSONDecodeError:
-            # Handle cases where upvoter_data might be malformed or empty
-            fb['upvoter_names_list'] = []
-            fb['votes'] = 0
-            # Potentially log this error or try to fix the data in DB
+    feedbacks_for_template = []
+    for fb in feedbacks:
+        fb_dict = dict(fb)
+        if fb_dict['upvoters']:
+            upvoter_entries = [entry.strip() for entry in fb_dict['upvoters'].split(',') if entry.strip()]
+            fb_dict['upvoter_names_list'] = [entry.split(':', 1)[1] for entry in upvoter_entries if ':' in entry]
+        else:
+            fb_dict['upvoter_names_list'] = []
+        feedbacks_for_template.append(fb_dict)
 
-        feedbacks.append(fb)
-    conn.close()
-    
+    db.close()
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "feedbacks": feedbacks, "url_for": request.url_for, "config": config}
+        {"request": request, "feedbacks": feedbacks_for_template, "url_for": request.url_for, "config": app_config}
     )
 
 @app.post("/submit", response_class=RedirectResponse)
 async def submit_feedback(
+    request: Request,
     question: str = Form(...),
     description: str = Form(""),
-    name: str = Form(...)
+    name: str = Form(...),
+    upvoter_id: str = Form(...),
+    feedback_id: Optional[int] = Form(None)
 ):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        'INSERT INTO feedback (question, description, name, votes, upvoter_data) VALUES (?, ?, ?, 0, ?)',
-        (question, description, name, '[]') # Initialize upvoter_data as empty JSON array
-    )
+
+    if feedback_id is not None:
+        cursor.execute(
+            'UPDATE feedback SET question = ?, description = ?, name = ? WHERE id = ? AND upvoter_id = ?',
+            (question, description, name, feedback_id, upvoter_id)
+        )
+    else:
+        cursor.execute(
+            'INSERT INTO feedback (question, description, name, votes, upvoter_id, upvoters) VALUES (?, ?, ?, 0, ?, "")',
+            (question, description, name, upvoter_id)
+        )
     conn.commit()
     conn.close()
     return RedirectResponse(url="/", status_code=303)
 
 @app.get("/vote/{fid}/{direction}/{upvoter_id_param}/{upvoter_name_param}", response_class=RedirectResponse)
-async def vote_feedback(
-    fid: int, 
-    direction: str, 
-    upvoter_id_param: str, 
-    upvoter_name_param: str,
-    request: Request # Request object needed for url_for in template
-):
+async def vote_feedback(fid: int, direction: str, upvoter_id_param: str, upvoter_name_param: str):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT upvoter_data FROM feedback WHERE id = ?', (fid,))
-    result = cursor.fetchone()
+    cursor.execute('SELECT upvoters FROM feedback WHERE id = ?', (fid,))
+    current_upvoters_raw = cursor.fetchone()
     
-    upvoter_data_json = result['upvoter_data'] if result and result['upvoter_data'] else '[]'
-    upvoters = json.loads(upvoter_data_json)
+    current_upvoters_str = current_upvoters_raw['upvoters'] if current_upvoters_raw and current_upvoters_raw['upvoters'] else ""
+    current_upvoters_list = [u.strip() for u in current_upvoters_str.split(',') if u.strip()]
     
-    # Create a set of existing upvoter IDs for efficient lookup
-    upvoter_ids_set = {voter['id'] for voter in upvoters if 'id' in voter}
+    current_upvoter_ids_only = [u.split(':', 1)[0] for u in current_upvoters_list if ':' in u]
 
-    updated = False
     if direction == 'up':
-        if upvoter_id_param not in upvoter_ids_set:
-            upvoters.append({"id": upvoter_id_param, "name": upvoter_name_param})
-            updated = True
+        if upvoter_id_param not in current_upvoter_ids_only:
+            cursor.execute('UPDATE feedback SET votes = votes + 1 WHERE id = ?', (fid,))
+            new_upvoter_entry = f"{upvoter_id_param}:{upvoter_name_param}"
+            updated_upvoters_list = current_upvoters_list + [new_upvoter_entry]
+            cursor.execute('UPDATE feedback SET upvoters = ? WHERE id = ?', (','.join(updated_upvoters_list), fid))
     elif direction == 'down':
-        # Remove the voter if they exist
-        initial_len = len(upvoters)
-        upvoters = [v for v in upvoters if v.get('id') != upvoter_id_param]
-        if len(upvoters) < initial_len:
-            updated = True
+        if upvoter_id_param in current_upvoter_ids_only:
+            cursor.execute('UPDATE feedback SET votes = votes - 1 WHERE id = ?', (fid,))
+            updated_upvoters_list = [u for u in current_upvoters_list if not u.startswith(f"{upvoter_id_param}:")]
+            cursor.execute('UPDATE feedback SET upvoters = ? WHERE id = ?', (','.join(updated_upvoters_list), fid))
     
-    if updated:
-        new_votes = len(upvoters)
-        new_upvoter_data_json = json.dumps(upvoters)
-        cursor.execute('UPDATE feedback SET votes = ?, upvoter_data = ? WHERE id = ?',
-                    (new_votes, new_upvoter_data_json, fid))
-        conn.commit()
-    
+    conn.commit()
     conn.close()
     return RedirectResponse(url="/", status_code=303)
 
 @app.get("/table", response_class=HTMLResponse)
 async def show_table(request: Request):
     conn = get_db_connection()
-    feedbacks_raw = conn.execute('SELECT * FROM feedback ORDER BY timestamp DESC').fetchall()
+    feedbacks = conn.execute('SELECT * FROM feedback ORDER BY timestamp DESC').fetchall()
     conn.close()
-
-    # Prepare data for display in the table, including processing upvoter_data
-    feedbacks_for_table = []
-    for fb_row in feedbacks_raw:
-        fb = dict(fb_row)
-        try:
-            upvoter_list = json.loads(fb['upvoter_data'])
-            # Display upvoter IDs as a comma-separated string for the table
-            fb['upvoter_ids_display'] = ", ".join([voter['id'] for voter in upvoter_list if 'id' in voter])
-            fb['upvoter_names_display'] = ", ".join([voter['name'] for voter in upvoter_list if 'name' in voter])
-        except json.JSONDecodeError:
-            fb['upvoter_ids_display'] = ""
-            fb['upvoter_names_display'] = ""
-        feedbacks_for_table.append(fb)
+    
+    feedbacks_for_template = []
+    for fb in feedbacks:
+        fb_dict = dict(fb)
+        if fb_dict['upvoters']:
+            upvoter_entries = [entry.strip() for entry in fb_dict['upvoters'].split(',') if entry.strip()]
+            fb_dict['upvoter_names_list'] = [entry.split(':', 1)[1] for entry in upvoter_entries if ':' in entry]
+        else:
+            fb_dict['upvoter_names_list'] = []
+        feedbacks_for_template.append(fb_dict)
 
     return templates.TemplateResponse(
         "table.html",
-        {"request": request, "feedbacks": feedbacks_for_table, "url_for": request.url_for, "config": config}
+        {"request": request, "feedbacks": feedbacks_for_template, "url_for": request.url_for, "config": app_config}
     )
 
-@app.get("/export-csv")
-async def export_csv():
+@app.get("/export/csv")
+async def export_feedback_csv():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, question, description, name, votes, timestamp, upvoter_data FROM feedback ORDER BY timestamp DESC')
+    cursor.execute('SELECT id, question, description, name, votes, timestamp, upvoter_id, upvoters FROM feedback')
     rows = cursor.fetchall()
     conn.close()
 
-    # Get column names (excluding row_factory's automatic index, use actual column names)
+    # Get column names from the cursor description
     column_names = [description[0] for description in cursor.description]
-
-    # Handle upvoter_data for CSV export (flatten it or make it readable)
-    processed_rows = []
-    for row in rows:
-        row_dict = dict(row) # Convert Row to dict
-        try:
-            upvoter_list = json.loads(row_dict['upvoter_data'])
-            upvoter_ids = "; ".join([voter['id'] for voter in upvoter_list if 'id' in voter])
-            upvoter_names = "; ".join([voter['name'] for voter in upvoter_list if 'name' in voter])
-            row_dict['upvoter_data_ids'] = upvoter_ids
-            row_dict['upvoter_data_names'] = upvoter_names
-        except json.JSONDecodeError:
-            row_dict['upvoter_data_ids'] = ""
-            row_dict['upvoter_data_names'] = ""
-        
-        # Select and reorder columns for CSV
-        processed_rows.append([
-            row_dict['id'],
-            row_dict['question'],
-            row_dict['description'],
-            row_dict['name'],
-            row_dict['votes'],
-            row_dict['timestamp'],
-            row_dict['upvoter_data_ids'], # New column
-            row_dict['upvoter_data_names'] # New column
-        ])
-    
-    # Update headers for CSV
-    csv_headers = ['ID', 'Frage', 'Beschreibung', 'Name', 'Votes', 'Zeitstempel', 'Upvoter IDs', 'Upvoter Namen']
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(csv_headers)
-    writer.writerows(processed_rows)
 
-    response = Response(content=output.getvalue(), media_type="text/csv")
-    response.headers["Content-Disposition"] = "attachment; filename=feedback_export.csv"
-    return response
+    # Write header
+    writer.writerow(column_names)
+
+    # Write data rows
+    for row in rows:
+        writer.writerow(list(row))
+
+    output.seek(0)
+    
+    headers = {
+        "Content-Disposition": "attachment; filename=feedback_export.csv",
+        "Content-Type": "text/csv; charset=utf-8"
+    }
+    return StreamingResponse(output, headers=headers, media_type="text/csv")
 
 
-# To run with uvicorn: uvicorn main:app --reload
-if __name__ == '__main__':
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=5000)

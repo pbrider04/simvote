@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ config.app_title }}</title>
-  <link rel="stylesheet" href="static/style.css">
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
   <div class="container">
@@ -26,9 +27,12 @@
         <div class="content-area">
             <section id="new-feedback-section" class="content-section">
                 <h2>Neue Frage stellen</h2>
-                <form id="feedback-form" action="/submit" method="post">
-                    <input type="text" name="question" placeholder="Ihre Frage oder Ihr Feedback" required>
-                    <textarea name="description" placeholder="Detaillierte Beschreibung (optional)"></textarea>
+                <form id="feedback-form" action="{{ url_for('submit_feedback') }}" method="post">
+                    <input type="hidden" id="feedback-id-input" name="feedback_id"> {# Hidden field for ID #}
+                    <input type="hidden" id="form-upvoter-id-input" name="upvoter_id"> {# Hidden field for upvoter_id for new submissions/updates #}
+
+                    <input type="text" name="question" id="form-question" placeholder="Ihre Frage oder Ihr Feedback" required>
+                    <textarea name="description" id="form-description" placeholder="Detaillierte Beschreibung (optional)"></textarea>
                     
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <input type="text" id="user-name-input" name="name" placeholder="Ihr Name (optional)" readonly>
@@ -37,7 +41,7 @@
                         <i class="fas fa-eye" id="toggle-upvoter-id-display-icon" title="Ihre ID anzeigen/verbergen"></i>
                     </div>
 
-                    <button type="submit">Frage einreichen</button>
+                    <button type="submit" id="submit-feedback-button">Frage einreichen</button>
                 </form>
             </section>
 
@@ -49,7 +53,7 @@
                 <div class="feedback-list">
                     <ul class="feedback-items">
                         {% for fb in feedbacks %}
-                        <li class="feedback-item">
+                        <li class="feedback-item" data-feedback-id="{{ fb['id'] }}" data-upvoter-id="{{ fb['upvoter_id'] }}" data-question="{{ fb['question'] }}" data-description="{{ fb['description'] if fb['description'] is not none else '' }}" data-name="{{ fb['name'] }}">
                             <div class="feedback-votes">
                                 <a href="{{ url_for('vote_feedback', fid=fb['id'], direction='up', upvoter_id_param='PLACEHOLDER_ID', upvoter_name_param='PLACEHOLDER_NAME') }}" class="vote-button upvote" data-fid="{{ fb['id'] }}" data-direction="up">▲</a>
                                 <span class="vote-count">{{ fb['votes'] }}</span>
@@ -58,6 +62,8 @@
                             <div class="feedback-content">
                                 <div class="question-wrapper">
                                     <p class="feedback-question">{{ fb['question'] }}</p>
+                                    {# Edit icon - initially hidden by CSS, shown by JS #}
+                                    <i class="fas fa-edit edit-feedback-icon" style="display: none;" title="Frage bearbeiten"></i>
                                 </div>
                                 {% if fb['description'] %}
                                 <div class="description-wrapper">
@@ -84,8 +90,7 @@
             </section>
         </div>
     </div>
-  </div>
 
-  <script src="static/script.js"></script>
+  <script src="{{ url_for('static', path='script.js') }}"></script>
 </body>
 </html>
