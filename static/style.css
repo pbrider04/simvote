@@ -308,7 +308,6 @@ h2 {
 
 /* Zustand der Beschreibung, wenn sie eingeklappt ist */
 .feedback-description.collapsed {
-    white-space: nowrap; /* Text nicht umbrechen und auf einer Zeile halten */
     overflow: hidden; /* Überlaufenden Text verstecken */
     text-overflow: ellipsis; /* Pünktchen anzeigen */
     max-height: 1.4em; /* Begrenzt auf eine Zeile (passen Sie dies an Ihre Schriftgröße an) */
@@ -316,20 +315,20 @@ h2 {
 
 .description-toggle-arrow {
     position: absolute;
-    left: 0; /* Positionierung links */
-    top: 0;
+    left: 0; /* Positionierung links von der Beschreibung */
+    top: 0.1em; /* Leichte Anpassung, um mit der ersten Textzeile auszurichten */
     cursor: pointer;
     color: #4a7a4a; /* Mittleres Grün */
     font-weight: bold;
     font-size: 1.1em;
     padding-right: 5px; /* Abstand zum Text */
     background-color: #fffefd;
-    transition: transform 0.2s ease; /* Sanfter Übergang für die Rotation */
+    /* transition: transform 0.2s ease; -- DIESE ZEILE ENTFERNT */
 }
 
-.description-toggle-arrow.expanded {
-    transform: rotate(180deg); /* Pfeil nach oben drehen, wenn ausgeklappt */
-}
+/* .description-toggle-arrow.expanded { -- DIESE REGEL KOMPLETT ENTFERNT */
+/* transform: rotate(90deg); */
+/* } */
 
 
 .feedback-meta {

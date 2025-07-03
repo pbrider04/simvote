@@ -134,13 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isCollapsed) {
                     // Ausklappen
                     descriptionParagraph.classList.remove('collapsed');
-                    arrow.classList.add('expanded'); // Pfeil drehen
-                    arrow.textContent = '▲'; // Pfeil nach oben
+                    // arrow.classList.add('expanded'); // Diese Klasse ist nicht mehr für die Rotation nötig
+                    arrow.textContent = '▼'; // Pfeil nach unten
                 } else {
                     // Einklappen
                     descriptionParagraph.classList.add('collapsed');
-                    arrow.classList.remove('expanded'); // Pfeil zurückdrehen
-                    arrow.textContent = '▼'; // Pfeil nach unten
+                    // arrow.classList.remove('expanded'); // Diese Klasse ist nicht mehr für die Rotation nötig
+                    arrow.textContent = '▶'; // Pfeil nach rechts
                 }
             }
         });

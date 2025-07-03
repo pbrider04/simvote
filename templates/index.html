@@ -62,7 +62,7 @@
                                 </div>
                                 {% if fb['description'] %}
                                 <div class="description-wrapper">
-                                    <span class="description-toggle-arrow" data-expanded="false">▼</span>
+                                    <span class="description-toggle-arrow" data-expanded="false">▶</span> {# Pfeil zeigt standardmäßig nach rechts #}
                                     <p class="feedback-description collapsed">{{ fb['description'] }}</p>
                                 </div>
                                 {% endif %}
@@ -71,7 +71,7 @@
                                 </p>
                                 {% if fb['upvoter_names_list'] %}
                                 <p class="all-upvoters-list">
-                                    Upvoter: {{ fb['upvoter_names_list'] | join(', ') }}
+                                    Unterstützer:inen: {{ fb['upvoter_names_list'] | join(', ') }}
                                 </p>
                                 {% endif %}
                             </div>
