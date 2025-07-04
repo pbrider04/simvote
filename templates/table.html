@@ -28,7 +28,7 @@
 
                 <div class="table-actions">
                     <a href="{{ url_for('export_feedback_csv') }}" class="export-button">Export als CSV</a>
-                </div>
+               </div>
 
                 <div class="table-container">
                     <table class="feedback-table">
@@ -69,10 +69,24 @@
                         <p class="no-feedback" style="margin: 20px;">Noch keine Fragen oder Feedback-Einträge in der Datenbank.</p>
                     {% endif %}
                 </div>
-            </div>
+                 <div class="table-actions">
+                    <a href="{{ url_for('download_db') }}" class="export-button">DB Export</a> {# Added DB Export Button #}
+                    <form action="{{ url_for('upload_db') }}" method="post" enctype="multipart/form-data" style="display: inline-block; margin-left: 10px;"> {# Added DB Import Form #}
+                        <input type="file" name="db_file" accept=".db" style="display: none;" id="db-upload-input">
+                        <label for="db-upload-input" class="export-button" style="cursor: pointer;">DB Import</label>
+                        <button type="submit" style="display: none;" id="db-upload-submit"></button>
+                    </form>
+                </div>
+           </div>
         </div>
     </div>
 
-    {# No script.js needed for this simple table page #}
+    <script>
+        document.getElementById('db-upload-input').addEventListener('change', function() {
+            if (this.files.length > 0) {
+                document.getElementById('db-upload-submit').click(); // Automatically submit form on file selection
+            }
+        });
+    </script>
 </body>
 </html>

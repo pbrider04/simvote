@@ -3,8 +3,8 @@ import os
 import json
 import io # Import io for CSV export
 import csv # Import csv for CSV export
-from fastapi import FastAPI, Request, Form, Depends, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse # Import StreamingResponse
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, UploadFile, File # Added UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, FileResponse # Added FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from typing import List, Dict, Optional
@@ -26,8 +26,8 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 # Database configuration
-# Der Pfad zur Datenbankdatei ist jetzt im gemounteten 'data'-Verzeichnis
-DATABASE_URL = os.path.join(BASE_DIR, 'data', 'feedback.db') # <-- NEU
+DATABASE_DIR = os.path.join(BASE_DIR, 'data') # NEW: Directory for the database
+DATABASE_URL = os.path.join(DATABASE_DIR, 'feedback.db') # Updated DATABASE_URL
 
 # Global variable to store configuration
 app_config = {}
@@ -212,6 +212,53 @@ async def export_feedback_csv():
         "Content-Type": "text/csv; charset=utf-8"
     }
     return StreamingResponse(output, headers=headers, media_type="text/csv")
+
+@app.get("/download_db")
+async def download_db():
+    """Endpoint to download the feedback.db file."""
+    if not os.path.exists(DATABASE_URL):
+        raise HTTPException(status_code=404, detail="Database file not found.")
+    
+    return FileResponse(
+        path=DATABASE_URL,
+        media_type="application/octet-stream", # Generic binary file
+        filename="feedback.db",
+        headers={"Content-Disposition": "attachment; filename=feedback.db"}
+    )
+
+@app.post("/upload_db", response_class=RedirectResponse)
+async def upload_db(db_file: UploadFile = File(...)):
+    """Endpoint to upload and replace the feedback.db file."""
+    if db_file.filename != "feedback.db":
+        raise HTTPException(status_code=400, detail="Only 'feedback.db' files are accepted.")
+
+    try:
+        # Ensure the database directory exists
+        if not os.path.exists(DATABASE_DIR):
+            os.makedirs(DATABASE_DIR)
+
+        # IMPORTANT: Close all existing DB connections before replacing the file
+        # This is a critical step to prevent database locking issues.
+        # In a real application, you might need a more robust connection management.
+        # For this simple example, we assume no active connections during upload.
+
+        # Save the uploaded file, overwriting the old one
+        with open(DATABASE_URL, "wb") as buffer:
+            while True:
+                chunk = await db_file.read(1024) # Read in chunks
+                if not chunk:
+                    break
+                buffer.write(chunk)
+        
+        # Re-initialize the database schema if the new DB is empty or lacks tables
+        # This ensures the table structure exists after an upload,
+        # but won't alter existing data in an already structured DB.
+        init_db()
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error uploading database file: {e}")
+    
+    return RedirectResponse(url="/", status_code=303) # Redirect to home after upload
 
 
 if __name__ == "__main__":
