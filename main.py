@@ -151,12 +151,12 @@ async def index(request: Request):
 
     # NEU: Namen für alle gesammelten Browser-IDs abrufen
     name_lookup = get_names_for_browser_ids(list(all_browser_ids_to_fetch))
-    logging.info(f"name_lookup dict: {name_lookup}")
+    logging.debug(f"name_lookup dict: {name_lookup}")
 
     # upvoter_names_list befüllen
     for fb_dict in feedbacks_for_template:
         fb_dict['upvoter_names_list'] = [name_lookup.get(bid, 'Unbekannt') for bid in fb_dict['raw_upvoter_ids']]
-        logging.info(f"Upvoter names list: {fb_dict['upvoter_names_list']}")
+    logging.debug(f"feedbacks_for_template: {feedbacks_for_template}")
         
     return templates.TemplateResponse(
         "index.html",
