@@ -38,14 +38,13 @@ def get_db_connection():
     return conn
 
 def init_db():
-    conn = get_db_connection()
+    # Ensure the database directory exists
+    if not os.path.exists(DATABASE_DIR):
+        os.makedirs(DATABASE_DIR)
+        
+    conn = sqlite3.connect(DATABASE_URL) # Connect after ensuring dir exists
     cursor = conn.cursor()
     
-    # Stellen Sie sicher, dass das Verzeichnis existiert, bevor Sie versuchen, die DB zu erstellen
-    db_dir = os.path.dirname(DATABASE_URL)
-    if not os.path.exists(db_dir):
-        os.makedirs(db_dir) # Erstellt das Verzeichnis, falls es nicht existiert (im Container)
-        
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS feedback (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,11 +73,15 @@ def load_config():
     config_path = os.path.join(BASE_DIR, 'config.json')
     if os.path.exists(config_path):
         with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            config_data = json.load(f)
+            # Ensure app_maintainance_hint exists, set to empty string if not
+            config_data.setdefault("app_maintainance_hint", "")
+            return config_data
     return {
         "app_title": "Default App Title",
         "app_description": "Default App Description",
-        "logo_path": "/static/default_logo.png"
+        "logo_path": "/static/default_logo.png",
+        "app_maintainance_hint": "" # Default to empty string
     }
 
 @app.on_event("startup")

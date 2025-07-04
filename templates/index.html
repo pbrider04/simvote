@@ -31,6 +31,15 @@
         </nav>
         
         <div class="content-area">
+            {# Maintenance Hint Field #}
+            {% if config.app_maintainance_hint %}
+            <div class="maintenance-hint">
+                <h2>Wartungshinweis!</h2>
+                <p>{{ config.app_maintainance_hint }}</p>
+            </div>
+            {% endif %}
+            {# End Maintenance Hint Field #}
+
             <section id="new-feedback-section" class="content-section">
                 <h2>Neue Frage stellen <i class="fas fa-info-circle info-icon" data-target="new-feedback-explanation" title="Informationen anzeigen"></i></h2>
                 <div id="new-feedback-explanation" class="explanation-text hidden">
@@ -107,6 +116,6 @@
         </div>
     </div>
 
-  <script  src="/static/script.js"></script>
+  <script src="/static/script.js"></script>
 </body>
 </html>

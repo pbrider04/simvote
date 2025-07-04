@@ -242,7 +242,7 @@ h2 {
   align-items: center;
   margin-right: 20px;
   padding-right: 15px;
-  border-right: 1px solid #c0d6c0; /* Gedämpftes Hellgrün */
+  border-right: 1px solid #c0d6c0; /* Gedämpftes Hellgrün für Trennlinie */
   padding-bottom: 0;
   margin-bottom: 0;
 }
@@ -469,6 +469,24 @@ h2 {
 .feedback-table tbody tr:last-child td {
     border-bottom: none; /* Kein Rahmen unter der letzten Zeile */
 }
+
+/* Maintenance Hint Styling */
+.maintenance-hint {
+    background-color: #f1c1c8; /* Light red background */
+    color: #c62828; /* Dark red text */
+    border: 1px solid #ef9a9a; /* Red border */
+    border-radius: 5px;
+    padding: 15px 20px;
+    margin-bottom: 25px; /* Space below the hint */
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.maintenance-hint p {
+    margin: 0; /* Remove default paragraph margins */
+}
+
 
 /* Responsive Design for Table */
 @media (max-width: 768px) {
