@@ -328,6 +328,8 @@ h2 {
 
 /* Standardzustand der Beschreibung (ausgeklappt) */
 .feedback-description {
+    margin-top: 3px;
+    margin-left: 5px;
     margin-bottom: 0;
     padding-bottom: 0;
     line-height: 1.4em;
@@ -558,7 +560,7 @@ h2 {
   }
 
   .feedback-item {
-    flex-direction: column; /* Votes über dem Inhalt stapeln */
+    flex-direction: row; /* Votes über dem Inhalt stapeln */
     align-items: center; /* Inhalt im Element zentrieren */
     padding: 10px; /* Etwas weniger internes Padding auf kleinen Bildschirmen */
   }
@@ -566,11 +568,11 @@ h2 {
   .feedback-votes {
     flex-direction: column; /* Vote-Buttons bleiben auch auf Mobilgerät in Spalten */
     justify-content: center; /* Vote-Buttons zentrieren */
-    width: 100%; /* Volle Breite */
-    margin-right: 0; /* Rechten Außenabstand entfernen */
-    padding-right: 0; /* Rechtes Polster entfernen */
-    border-right: none; /* Rechten Rahmen entfernen */
-    border-bottom: 1px solid #c0d6c0; /* Unteren Rahmen hinzufügen */
+    width: 10%; /* smaller left Part */
+    margin-right: 5px; /* Rechten Außenabstand entfernen */
+    padding-right: 5px; /* Rechtes Polster entfernen */
+    border-right: 1px solid; /* Rechte Abgrenzung */
+    border-bottom: none #c0d6c0; /* Unten nichts */
     padding-bottom: 10px; /* Polster unter den Votes */
     margin-bottom: 15px; /* Außenabstand unter der Vote-Sektion */
   }
@@ -612,6 +614,21 @@ h2 {
 
   h2 {
     font-size: 1.3em;
+  }
+  .feedback-votes {
+    flex-direction: column; /* Vote-Buttons bleiben auch auf Mobilgerät in Spalten */
+    justify-content: center; /* Vote-Buttons zentrieren */
+    margin-right: 0; /* Rechten Außenabstand entfernen */
+    padding-right: 3px; /* Rechtes Polster entfernen */
+    border-right: 1px solid; /* Rechte Abgrenzung */
+    border-bottom: none #c0d6c0; /* Unten nichts */
+    padding-bottom: 10px; /* Polster unter den Votes */
+    margin-bottom: 15px; /* Außenabstand unter der Vote-Sektion */
+  }
+  .feedback-item {
+    flex-direction: row; /* Votes über dem Inhalt stapeln */
+    align-items: center; /* Inhalt im Element zentrieren */
+    padding: 10px; /* Etwas weniger internes Padding auf kleinen Bildschirmen */
   }
 
   .sidebar ul {
