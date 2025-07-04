@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formDescriptionInput = document.getElementById('form-description');
     const formNameInput = document.getElementById('user-name-input'); // Re-using this for form population
     const feedbackIdInput = document.getElementById('feedback-id-input');
-    const formUpvoterIdInput = document.getElementById('form-upvoter-id-input'); // Hidden input for upvoter_id in form
+    const formBrowserIdInput = document.getElementById('form-browser-id-input'); // Hidden input for browser_id in form
     const submitFeedbackButton = document.getElementById('submit-feedback-button');
     const feedbackForm = document.getElementById('feedback-form');
 
@@ -37,8 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- User ID & Name Management ---
     const userNameInput = document.getElementById('user-name-input');
     const editNameIcon = document.getElementById('edit-name-icon');
-    const upvoterIdDisplay = document.getElementById('upvoter-id-display');
-    const toggleUpvoterIdDisplayIcon = document.getElementById('toggle-upvoter-id-display-icon');
+    const browserIdDisplay = document.getElementById('browser-id-display'); //
+    const toggleBrowserIdDisplayIcon = document.getElementById('toggle-browser-id-display-icon'); //
 
     // Function to generate a simple unique ID
     function generateUUID() {
@@ -50,13 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Load or generate user ID
-    let upvoterId = localStorage.getItem('upvoterId');
-    if (!upvoterId) {
-        upvoterId = generateUUID();
-        localStorage.setItem('upvoterId', upvoterId);
+    let browserId = localStorage.getItem('browserId'); //
+    if (!browserId) {
+        browserId = generateUUID();
+        localStorage.setItem('browserId', browserId); //
     }
-    upvoterIdDisplay.textContent = `Ihre ID: ${upvoterId}`;
-    formUpvoterIdInput.value = upvoterId; // Set hidden upvoter_id for form submissions
+    browserIdDisplay.textContent = `Ihre ID: ${browserId}`; //
+    formBrowserIdInput.value = browserId; // Set hidden browser_id for form submissions
 
     // Load or set user name
     let userName = localStorage.getItem('userName');
@@ -106,17 +106,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Toggle upvoter ID display
-    if (toggleUpvoterIdDisplayIcon && upvoterIdDisplay) {
-        toggleUpvoterIdDisplayIcon.addEventListener('click', () => {
-            if (upvoterIdDisplay.style.display === 'none') {
-                upvoterIdDisplay.style.display = 'inline-block';
-                toggleUpvoterIdDisplayIcon.classList.remove('fa-eye');
-                toggleUpvoterIdDisplayIcon.classList.add('fa-eye-slash');
+    // Toggle browser ID display
+    if (toggleBrowserIdDisplayIcon && browserIdDisplay) { //
+        toggleBrowserIdDisplayIcon.addEventListener('click', () => { //
+            if (browserIdDisplay.style.display === 'none') { //
+                browserIdDisplay.style.display = 'inline-block'; //
+                toggleBrowserIdDisplayIcon.classList.remove('fa-eye'); //
+                toggleBrowserIdDisplayIcon.classList.add('fa-eye-slash'); //
             } else {
-                upvoterIdDisplay.style.display = 'none';
-                toggleUpvoterIdDisplayIcon.classList.remove('fa-eye-slash');
-                toggleUpvoterIdDisplayIcon.classList.add('fa-eye');
+                browserIdDisplay.style.display = 'none'; //
+                toggleBrowserIdDisplayIcon.classList.remove('fa-eye-slash'); //
+                toggleBrowserIdDisplayIcon.classList.add('fa-eye'); //
             }
         });
     }
@@ -129,8 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const direction = button.dataset.direction;
             const currentUserName = localStorage.getItem('userName') || "Anonym"; // Ensure a name is always sent
 
-            // Construct the URL with actual upvoter ID and name
-            const voteUrl = `/vote/${fid}/${direction}/${upvoterId}/${encodeURIComponent(currentUserName)}`;
+            // Construct the URL with actual browser ID and name
+            const voteUrl = `/vote/${fid}/${direction}/${browserId}/${encodeURIComponent(currentUserName)}`; //
             
             // Redirect to the vote URL
             window.location.href = voteUrl;
@@ -169,10 +169,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.querySelectorAll('.feedback-item').forEach(item => {
-        const itemUpvoterId = item.dataset.upvoterId;
+        const itemBrowserId = item.dataset.browserId; //
         const editIcon = item.querySelector('.edit-feedback-icon');
 
-        if (editIcon && itemUpvoterId === upvoterId) {
+        if (editIcon && itemBrowserId === browserId) { //
             editIcon.style.display = 'inline-block'; // Show edit icon for own posts
 
             editIcon.addEventListener('click', () => {
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formQuestionInput.value = item.dataset.question;
                 formDescriptionInput.value = item.dataset.description;
                 formNameInput.value = item.dataset.name; // Use the name from the feedback item
-                formUpvoterIdInput.value = item.dataset.upvoterId; // Ensure correct upvoter_id is set for update
+                formBrowserIdInput.value = item.dataset.browserId; // Ensure correct browser_id is set for update
 
                 submitFeedbackButton.textContent = 'Frage aktualisieren';
 
@@ -193,12 +193,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Handle form submission to ensure upvoter_id is always sent
+    // Handle form submission to ensure browser_id is always sent
     feedbackForm.addEventListener('submit', (e) => {
-        // Ensure the upvoter_id in the hidden input is correctly set
+        // Ensure the browser_id in the hidden input is correctly set
         // This is primarily for new submissions, for updates it's already set by the edit logic
-        if (!formUpvoterIdInput.value) {
-            formUpvoterIdInput.value = localStorage.getItem('upvoterId') || generateUUID();
+        if (!formBrowserIdInput.value) { //
+            formBrowserIdInput.value = localStorage.getItem('browserId') || generateUUID(); //
         }
     });
 

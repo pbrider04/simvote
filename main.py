@@ -21,8 +21,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # Mount static files correctly, giving it a 'name'
-# Passen Sie diesen Pfad an, falls sich Ihr 'static' Ordner relativ zu main.py geändert hat.
-# Basierend auf früheren Beispielen war er direkt neben main.py, also ist BASE_DIR ausreichend.
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 # Database configuration
@@ -45,6 +43,7 @@ def init_db():
     conn = sqlite3.connect(DATABASE_URL) # Connect after ensuring dir exists
     cursor = conn.cursor()
     
+    # NEU: Feedback-Tabelle anpassen
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS feedback (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,16 +52,36 @@ def init_db():
             name TEXT NOT NULL,
             votes INTEGER DEFAULT 0,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            upvoter_id TEXT,
-            upvoters TEXT DEFAULT ''
+            browser_id TEXT, -- upvoter_id wird zu browser_id
+            upvoters TEXT DEFAULT '' -- Speichert browser_ids als Komma-getrennte Liste
         )
     ''')
     
+    # NEU: identities-Tabelle hinzufügen
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS identities (
+            browser_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            UNIQUE(browser_id, name)
+        )
+    ''')
+
+    # Spalten-Checks und Anpassungen für die Feedback-Tabelle (falls DB bereits existiert)
     cursor.execute("PRAGMA table_info(feedback)")
     columns = [col[1] for col in cursor.fetchall()]
-    if 'upvoter_id' not in columns:
-        cursor.execute("ALTER TABLE feedback ADD COLUMN upvoter_id TEXT")
-    if 'upvoters' not in columns:
+    
+    if 'upvoter_id' in columns: # Alte Spalte entfernen (falls vorhanden)
+        try:
+            cursor.execute("ALTER TABLE feedback DROP COLUMN upvoter_id")
+        except sqlite3.OperationalError:
+            # Drop column might not be supported easily in older SQLite versions or if column is only one
+            # For simplicity, we assume a fresh start or manual handling if this fails.
+            pass # Keep it for now or handle manually if migration is complex
+    
+    if 'browser_id' not in columns: # Neue Spalte hinzufügen
+        cursor.execute("ALTER TABLE feedback ADD COLUMN browser_id TEXT")
+    
+    if 'upvoters' not in columns: # Spalte hinzufügen, falls nicht vorhanden
         cursor.execute("ALTER TABLE feedback ADD COLUMN upvoters TEXT DEFAULT ''")
 
     conn.commit()
@@ -90,22 +109,49 @@ async def startup_event():
     global app_config
     app_config = load_config()
 
+# Hilfsfunktion, um Namen aus browser_ids zu holen
+def get_names_for_browser_ids(browser_ids: List[str]) -> Dict[str, str]:
+    if not browser_ids:
+        return {}
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # SQLITE_LIMIT_VARIABLE_NUMBER is 999. Use safe approach for many IDs.
+    placeholders = ','.join('?' for _ in browser_ids)
+    
+    # Fetch all names for the given browser_ids
+    cursor.execute(f"SELECT browser_id, name FROM identities WHERE browser_id IN ({placeholders})", browser_ids)
+    name_map = {row['browser_id']: row['name'] for row in cursor.fetchall()}
+    conn.close()
+    return name_map
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     db = get_db_connection()
     feedbacks = db.execute('SELECT * FROM feedback ORDER BY votes DESC, timestamp DESC').fetchall()
+    db.close()
     
     feedbacks_for_template = []
+    all_browser_ids_to_fetch = set()
+
     for fb in feedbacks:
         fb_dict = dict(fb)
+        # NEU: upvoters sind jetzt nur IDs
         if fb_dict['upvoters']:
-            upvoter_entries = [entry.strip() for entry in fb_dict['upvoters'].split(',') if entry.strip()]
-            fb_dict['upvoter_names_list'] = [entry.split(':', 1)[1] for entry in upvoter_entries if ':' in entry]
+            upvoter_ids = [entry.strip() for entry in fb_dict['upvoters'].split(',') if entry.strip()]
+            all_browser_ids_to_fetch.update(upvoter_ids) # IDs für spätere Abfrage sammeln
+            fb_dict['raw_upvoter_ids'] = upvoter_ids # Speichern der IDs zur späteren Verwendung
         else:
-            fb_dict['upvoter_names_list'] = []
+            fb_dict['raw_upvoter_ids'] = []
         feedbacks_for_template.append(fb_dict)
 
-    db.close()
+    # NEU: Namen für alle gesammelten Browser-IDs abrufen
+    name_lookup = get_names_for_browser_ids(list(all_browser_ids_to_fetch))
+
+    # upvoter_names_list befüllen
+    for fb_dict in feedbacks_for_template:
+        fb_dict['upvoter_names_list'] = [name_lookup.get(bid, 'Unbekannt') for bid in fb_dict['raw_upvoter_ids']]
+        
     return templates.TemplateResponse(
         "index.html",
         {"request": request, "feedbacks": feedbacks_for_template, "url_for": request.url_for, "config": app_config}
@@ -117,50 +163,71 @@ async def submit_feedback(
     question: str = Form(...),
     description: str = Form(""),
     name: str = Form(...),
-    upvoter_id: str = Form(...),
+    browser_id: str = Form(...), # upvoter_id wird zu browser_id
     feedback_id: Optional[int] = Form(None)
 ):
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # NEU: Browser-ID und Name in identities-Tabelle speichern (falls nicht vorhanden)
+    cursor.execute(
+        'INSERT OR IGNORE INTO identities (browser_id, name) VALUES (?, ?)',
+        (browser_id, name)
+    )
+
     if feedback_id is not None:
+        # NEU: Beim Editieren votes und upvoters unverändert lassen
         cursor.execute(
-            'UPDATE feedback SET question = ?, description = ?, name = ? WHERE id = ? AND upvoter_id = ?',
-            (question, description, name, feedback_id, upvoter_id)
+            'UPDATE feedback SET question = ?, description = ?, name = ?, browser_id = ? WHERE id = ?',
+            (question, description, name, browser_id, feedback_id)
         )
     else:
+        # NEU: Beim Einreichen einer neuen Frage
+        # upvoters mit eigener ID initialisieren und votes auf 1 setzen
+        initial_upvoters = browser_id
+        initial_votes = 1
         cursor.execute(
-            'INSERT INTO feedback (question, description, name, votes, upvoter_id, upvoters) VALUES (?, ?, ?, 0, ?, "")',
-            (question, description, name, upvoter_id)
+            'INSERT INTO feedback (question, description, name, votes, browser_id, upvoters) VALUES (?, ?, ?, ?, ?, ?)',
+            (question, description, name, initial_votes, browser_id, initial_upvoters)
         )
     conn.commit()
     conn.close()
     return RedirectResponse(url="/", status_code=303)
 
-@app.get("/vote/{fid}/{direction}/{upvoter_id_param}/{upvoter_name_param}", response_class=RedirectResponse)
-async def vote_feedback(fid: int, direction: str, upvoter_id_param: str, upvoter_name_param: str):
+@app.get("/vote/{fid}/{direction}/{browser_id_param}/{name_param}", response_class=RedirectResponse) # upvoter_id_param wird zu browser_id_param
+async def vote_feedback(fid: int, direction: str, browser_id_param: str, name_param: str):
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # NEU: Browser-ID und Name in identities-Tabelle speichern (falls nicht vorhanden)
+    cursor.execute(
+        'INSERT OR IGNORE INTO identities (browser_id, name) VALUES (?, ?)',
+        (browser_id_param, name_param)
+    )
 
     cursor.execute('SELECT upvoters FROM feedback WHERE id = ?', (fid,))
     current_upvoters_raw = cursor.fetchone()
     
     current_upvoters_str = current_upvoters_raw['upvoters'] if current_upvoters_raw and current_upvoters_raw['upvoters'] else ""
-    current_upvoters_list = [u.strip() for u in current_upvoters_str.split(',') if u.strip()]
-    
-    current_upvoter_ids_only = [u.split(':', 1)[0] for u in current_upvoters_list if ':' in u]
+    current_upvoters_list = [u.strip() for u in current_upvoters_str.split(',') if u.strip()] # Liste der IDs
+
+    updated_upvoters_list = list(current_upvoters_list) # Kopie erstellen
 
     if direction == 'up':
-        if upvoter_id_param not in current_upvoter_ids_only:
-            cursor.execute('UPDATE feedback SET votes = votes + 1 WHERE id = ?', (fid,))
-            new_upvoter_entry = f"{upvoter_id_param}:{upvoter_name_param}"
-            updated_upvoters_list = current_upvoters_list + [new_upvoter_entry]
-            cursor.execute('UPDATE feedback SET upvoters = ? WHERE id = ?', (','.join(updated_upvoters_list), fid))
+        if browser_id_param not in updated_upvoters_list:
+            updated_upvoters_list.append(browser_id_param)
     elif direction == 'down':
-        if upvoter_id_param in current_upvoter_ids_only:
-            cursor.execute('UPDATE feedback SET votes = votes - 1 WHERE id = ?', (fid,))
-            updated_upvoters_list = [u for u in current_upvoters_list if not u.startswith(f"{upvoter_id_param}:")]
-            cursor.execute('UPDATE feedback SET upvoters = ? WHERE id = ?', (','.join(updated_upvoters_list), fid))
+        if browser_id_param in updated_upvoters_list:
+            updated_upvoters_list.remove(browser_id_param)
+    
+    # NEU: Votes aus der Anzahl der Upvoter ermitteln
+    new_votes = len(updated_upvoters_list)
+    new_upvoters_str = ','.join(updated_upvoters_list)
+
+    cursor.execute(
+        'UPDATE feedback SET votes = ?, upvoters = ? WHERE id = ?',
+        (new_votes, new_upvoters_str, fid)
+    )
     
     conn.commit()
     conn.close()
@@ -173,14 +240,26 @@ async def show_table(request: Request):
     conn.close()
     
     feedbacks_for_template = []
+    all_browser_ids_to_fetch = set()
+
     for fb in feedbacks:
         fb_dict = dict(fb)
+        # NEU: upvoters sind jetzt nur IDs
         if fb_dict['upvoters']:
-            upvoter_entries = [entry.strip() for entry in fb_dict['upvoters'].split(',') if entry.strip()]
-            fb_dict['upvoter_names_list'] = [entry.split(':', 1)[1] for entry in upvoter_entries if ':' in entry]
+            upvoter_ids = [entry.strip() for entry in fb_dict['upvoters'].split(',') if entry.strip()]
+            all_browser_ids_to_fetch.update(upvoter_ids) # IDs für spätere Abfrage sammeln
+            fb_dict['raw_upvoter_ids'] = upvoter_ids # Speichern der IDs zur späteren Verwendung
         else:
-            fb_dict['upvoter_names_list'] = []
+            fb_dict['raw_upvoter_ids'] = []
         feedbacks_for_template.append(fb_dict)
+
+    # NEU: Namen für alle gesammelten Browser-IDs abrufen
+    name_lookup = get_names_for_browser_ids(list(all_browser_ids_to_fetch))
+
+    # upvoter_names_list befüllen
+    for fb_dict in feedbacks_for_template:
+        fb_dict['upvoter_names_list'] = [name_lookup.get(bid, 'Unbekannt') for bid in fb_dict['raw_upvoter_ids']]
+
 
     return templates.TemplateResponse(
         "table.html",
@@ -191,7 +270,8 @@ async def show_table(request: Request):
 async def export_feedback_csv():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, question, description, name, votes, timestamp, upvoter_id, upvoters FROM feedback')
+    # NEU: browser_id statt upvoter_id abfragen
+    cursor.execute('SELECT id, question, description, name, votes, timestamp, browser_id, upvoters FROM feedback')
     rows = cursor.fetchall()
     conn.close()
 
