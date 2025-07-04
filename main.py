@@ -11,6 +11,10 @@ from typing import List, Dict, Optional
 from datetime import datetime
 import uuid
 import uvicorn # Import uvicorn
+import logging
+
+# Configure logging (you might want to set this up once at the beginning of your script)
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 app = FastAPI()
 
@@ -151,6 +155,7 @@ async def index(request: Request):
     # upvoter_names_list befüllen
     for fb_dict in feedbacks_for_template:
         fb_dict['upvoter_names_list'] = [name_lookup.get(bid, 'Unbekannt') for bid in fb_dict['raw_upvoter_ids']]
+        logging.info(f"Upvoter names list: {fb_dict['upvoter_names_list']}")
         
     return templates.TemplateResponse(
         "index.html",
